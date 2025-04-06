@@ -14,6 +14,7 @@ from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 
 # TODO:
 #  Visual glitches on Richter dialog
+#  Remember to try Eijebong fuzzer
 
 # Ideas:
 # Lock red doors for progression
