@@ -3,79 +3,11 @@ import asyncio
 from CommonClient import ClientCommandProcessor, CommonContext, logger, gui_enabled
 from collections import namedtuple
 
-Item = namedtuple("Item", ["game_value", "default_wheel_position", "inventory_position"])
-Location = namedtuple("Location", ["zone", "offset", "mask"])
+from worlds.tp.Locations import Regions, locations
+from worlds.tp.Items import bottles, items
 
-Items = {
-    "Gale Boomerang": Item(0x40, 6, 0),
-    "Lantern": Item(0x48, 7, 1),
-    "Spinner": Item(0x41, 3, 2),
-    "Iron Boots": Item(0x45, 5, 3),
-    "Hero's Bow": Item(0x43, 4, 4),
-    "Hawkeye": Item(0x3e, 10, 5),
-    "Ball and Chain": Item(0x42, 2, 6),
-    "Dominion Rod": Item(0x46, 1, 8),
-    "Clawshot": Item(0x44, 0, 9),
-    "Double Clawshot": Item(0x47, 0, 10),
-    "Bottle #1": Item(0x60, 14, 11),
-    "Bottle #2": Item(0x60, 15, 12),
-    "Bottle #3": Item(0x60, 16, 13),
-    "Bottle #4": Item(0x60, 17, 14),
-    "Bomb Bag #1": Item(0x50, 11, 15),
-    "Bomb Bag #2": Item(0x50, 12, 16),
-    "Bomb Bag #3": Item(0x50, 13, 17),
-    "Fishing Rod": Item(0x4a, 9, 20),
-    "Horse Call": Item(0x84, 18, 21),
-    "Slingshot": Item(0x4b, 8, 23),
-    "Ooccoo(FT)": Item(0x25, 24, 18),
-    "Ooccoo Jr.": Item(0x27, 24, 18),
-    "Ooccoo": Item(0x33, 24, 18)
-}
 
-Bottles = {
-    0x60: "Empty Bottle",
-    0x64: "Milk",
-    0x65: "Milk(half)",
-    0x66: "Lantern Oil(Shop)",
-    0x67: "Water",
-    0x68: "Lantern Oil(Scooped)",
-    0x6f: "Lantern Refilled(Shop)"
-}
-
-Locations = {
-    "Forest Temple: West Tile Worm Room Vines Chest": Location("Forest Temple", 0x0, 0x1),
-    "Forest Temple: Totem Pole Chest": Location("Forest Temple", 0x0, 0x2),
-    "Forest Temple: East Water Cave Chest": Location("Forest Temple", 0x0, 0x4),
-    "Forest Temple: West Deku Like Chest": Location("Forest Temple", 0x0, 0x80),
-    "Forest Temple: West Tile Worm Chest Behind Stairs": Location("Forest Temple", 0x1, 0x8),
-    "Forest Temple: Central Chest Hanging From Web": Location("Forest Temple", 0x1, 0x10),
-    "Forest Temple: Second Monkey Under Bridge Chest": Location("Forest Temple", 0x2, 0x2),
-    "Forest Temple: East Tile Worm Chest": Location("Forest Temple", 0x3, 0x2),
-    "Forest Temple: North Deku Like Chest": Location("Forest Temple", 0x3, 0x4),
-    "Forest Temple: Windless Bridge Chest": Location("Forest Temple", 0x3, 0x10),
-    "Forest Temple: Big Baba Key": Location("Forest Temple", 0x3, 0x40),
-    "Forest Temple: Entrance Vines Chest": Location("Forest Temple", 0x3, 0x80),
-    "Forest Temple: Central Chest Behind Stairs": Location("Forest Temple", 0x7, 0x20),
-    "Forest Temple: Big Key Chest": Location("Forest Temple", 0x7, 0x40),
-    "Forest Temple: Central North Chest": Location("Forest Temple", 0x7, 0x80),
-    "Forest Temple: Dungeon Reward": Location("Forest Temple", 0x1d, 0x8),
-    "Forest Temple: Diababa Heart Container": Location("Forest Temple", 0x1d, 0x10),
-    "Forest Temple: Gale Boomerang": Location("Forest Temple", 0x1d, 0x80),
-    "Wooden Sword Chest": Location("South Faron", 0x3, 0x10),
-    "Link Basement Chest": Location("South Faron", 0x3, 0x2),
-    "Dark alcove on North Faron tunnel passage": Location("North Faron", 0x0, 0x80),
-    "Right cave before forest temple chest by torches": Location("North Faron", 0x0, 0x1),
-    "Right cave before forest temple secret chest": Location("North Faron", 0x0, 0x4),
-    "Chest by forest temple behind deku baba": Location("North Faron", 0x4, 0x80)
-}
-
-Regions = {
-    "Forest Temple": [b'D_MN05\x00\x00', b'D_MN05A\x00', b'D_MN05B\x00'],
-    "South Faron": [b'F_SP00\x00\x00', b'F_SP103\x00', b'F_SP104\x00', b'R_SP01\x00\x00'],
-    "North Faron": [b'F_SP108\x00', b'D_SB10\x00\x00']
-}
-
-item_id_to_name = {value.game_value: key for key, value in Items.items()}
+item_id_to_name = {value.game_value: key for key, value in items.items()}
 item_wheel_start = 0x80406274
 item_inventory_start = 0x8040625c
 region_node = 0x80406b18
@@ -115,7 +47,7 @@ async def dolphin_sync_task(ctx: TPContext):
         try:
             item_name = item_id_to_name[current_item]
         except KeyError:
-            item_name = Bottles[current_item]
+            item_name = bottles[current_item]
         logger.info(item_name)
 
     while not ctx.exit_event.is_set():
@@ -130,7 +62,7 @@ async def dolphin_sync_task(ctx: TPContext):
                     break
 
         last_offset = 0xffff
-        for k, v in Locations.items():
+        for k, v in locations.items():
             if zone_name == v.zone:
                 if v.offset != last_offset:
                     last_offset = v.offset
@@ -148,9 +80,8 @@ async def dolphin_sync_task(ctx: TPContext):
 
 
 def grant_item(item_name: str) -> None:
-    item_to_grant: Item
     try:
-        item_to_grant = Items[item_name]
+        item_to_grant = items[item_name]
     except KeyError:
         print(f"Error! {item_name} not found")
         return
@@ -172,10 +103,10 @@ def grant_item(item_name: str) -> None:
             break
         else:
             cur_item_id = dolphin_memory_engine.read_byte(item_inventory_start + item)
-            if cur_item_id in Bottles.keys():
-                cur_item = Items["Bottle #1"]
+            if cur_item_id in bottles.keys():
+                cur_item = items["Bottle #1"]
             else:
-                cur_item = Items[item_id_to_name[cur_item_id]]
+                cur_item = items[item_id_to_name[cur_item_id]]
 
             if cur_item.default_wheel_position > item_to_grant.default_wheel_position:
                 # WE MIGHT LOSE LAST ITEM. NEED MORE RESEARCH

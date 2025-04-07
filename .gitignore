@@ -4,11 +4,13 @@
 *_Spoiler.txt
 *.bmbp
 *.apbp
+*.apcivvi
 *.apl2ac
 *.apm3
 *.apmc
 *.apz5
 *.aptloz
+*.aptww
 *.apemerald
 *.pyc
 *.pyd
@@ -44,6 +46,7 @@ EnemizerCLI/
 /sni-*/
 /appimagetool*
 /host.yaml
+/README.md
 /options.yaml
 /config.yaml
 /logs/
