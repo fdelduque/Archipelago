@@ -83,19 +83,19 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     if enemysanity:
         # Venus weed
         enemy = world.get_location(ABREV_TO_LOCATION["CHI_Venus weed_enemy"], player)
-        set_rule(enemy, lambda state: state.has("Demon card", player))
+        add_rule(enemy, lambda state: state.has("Demon card", player))
         # Flea armor
         enemy = world.get_location(ABREV_TO_LOCATION["LIB_Flea armor_enemy"], player)
-        set_rule(enemy, lambda state: sotn_has_any(state, player))
+        add_rule(enemy, lambda state: sotn_has_any(state, player))
         # Lesser demon
         enemy = world.get_location(ABREV_TO_LOCATION["LIB_Lesser demon_enemy"], player)
-        set_rule(enemy, lambda state: sotn_has_any(state, player))
+        add_rule(enemy, lambda state: sotn_has_any(state, player))
         # Olrox
         enemy = world.get_location(ABREV_TO_LOCATION["NO2_Olrox_enemy"], player)
-        set_rule(enemy, lambda state: sotn_has_flying(state, player) and sotn_has_transformation(state, player))
+        add_rule(enemy, lambda state: sotn_has_flying(state, player) and sotn_has_transformation(state, player))
         # Gurkha
         enemy = world.get_location(ABREV_TO_LOCATION["NO3_Gurkha_enemy"], player)
-        set_rule(enemy, lambda state: state.has("Gravity boots", player) or sotn_has_flying(state, player))
+        add_rule(enemy, lambda state: state.has("Gravity boots", player) or sotn_has_flying(state, player))
         # Fishhead
         enemy = world.get_location(ABREV_TO_LOCATION["NO4_Fishhead_enemy"], player)
         add_rule(enemy, lambda state: state.has("Holy symbol", player))
@@ -104,7 +104,7 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
         if fs_enemysanity:
             for loc in ENEMY_LOCATIONS.keys():
                 enemy = world.get_location(loc, player)
-                add_rule(enemy, lambda state: state.has("Spirit orb", player))
+                add_rule(enemy, lambda state: state.has("Faerie scroll", player))
 
     # Player might break TOP_Turkey_1 with spell and miss the loot, forbid progression items
     if ABREV_TO_LOCATION["TOP_Turkey_1"] in EXTENSIONS[extension]:
@@ -254,10 +254,6 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     if "NO1_Garnet_3" in EXTENSIONS[extension]:
         location = world.get_location(ABREV_TO_LOCATION["NO1_Garnet_3"], player)
         add_rule(location, lambda state: sotn_has_any(state, player))
-    if "NO1_Pot roast_77699032" in EXTENSIONS[extension]:
-        location = world.get_location(ABREV_TO_LOCATION["NO1_Pot roast_77699032"], player)
-        for r in RELIC_NAMES:
-            forbid_item(location, r, player)
 
     # NO3 - Castle Entrance
     if "NO3_Life Vessel_8" in EXTENSIONS[extension]:
