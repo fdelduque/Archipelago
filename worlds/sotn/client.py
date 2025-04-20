@@ -15,6 +15,9 @@ from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 # TODO:
 #  Visual glitches on Richter dialog
 #  Remember to try Eijebong fuzzer
+#  Lost Dopp10 item.
+#  Enemysanity relic with copy trigger
+#  Fix item bellow librarian
 
 # Ideas:
 # Lock red doors for progression
@@ -50,6 +53,7 @@ class SotNClient(BizHawkClient):
         self.received_relics = []
         self.relic_placement = []
         self.copy_placement = []
+        self.jewel_item = -1
         self.jewel_item_qty = -1
         self.message_queue = []
         self.received_queue = []
@@ -117,10 +121,9 @@ class SotNClient(BizHawkClient):
                 dracula_dead = False
 
                 try:
-                    temp_zone = self.cur_zone
                     cur_area = struct.unpack("<H", area_value)[0]
-                    self.cur_zone = AREA_FLAG_TO_ZONE[cur_area]
-                    if self.cur_zone != self.last_zone:
+                    cur_zone = AREA_FLAG_TO_ZONE[cur_area]
+                    if self.cur_zone != cur_zone:
                         await ctx.send_msgs(
                             [
                                 {
@@ -128,11 +131,16 @@ class SotNClient(BizHawkClient):
                                     "key": f"sotn_zone_{ctx.slot}",
                                     "default": 0,
                                     "want_reply": False,
-                                    "operations": [{"operation": "replace", "value": self.cur_zone["name"]}],
+                                    "operations": [{"operation": "replace", "value": cur_zone["name"]}],
                                 }
                             ]
                         )
-                        self.last_zone = temp_zone
+                        # Did we leave Long Library?
+                        if self.last_zone and self.last_zone["name"] == "Long Library":
+                            self.jewel_item_qty = -1
+                            self.at_librarian = False
+                        self.last_zone = self.cur_zone
+                        self.cur_zone = cur_zone
                     if self.room_id != room_id:
                         await ctx.send_msgs(
                             [
@@ -146,12 +154,11 @@ class SotNClient(BizHawkClient):
                             ]
                         )
                         self.room_id = room_id
-                        if self.at_librarian:
-                            if room_id == 0x9870:
-                                self.at_librarian = False
                         if room_id == 0x9470:
                             self.at_librarian = True
-
+                        if self.at_librarian:
+                            if room_id != 0x9470:
+                                self.at_librarian = False
                 except KeyError:
                     self.cur_zone = None
 
@@ -331,6 +338,27 @@ class SotNClient(BizHawkClient):
                             if self.at_librarian and name != "Long Library - Librarian Shop Item":
                                 continue
 
+                            # Check if we need to update jewel item
+                            if "Long Library" in name:
+                                if self.jewel_item == -1:
+                                    jewel_item = (await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd42, 2, "MainRAM")]))[0]
+                                    jewel_item = int.from_bytes(jewel_item)
+                                    self.jewel_item = jewel_item
+                                elif self.jewel_item <= 257:
+                                    item_data = id_to_item[self.jewel_item]
+                                    item_qty = await self.read_int(ctx, item_data["address"], 1, "MainRAM")
+                                    if self.jewel_item_qty == - 1:
+                                        self.jewel_item_qty = item_qty
+                                    else:
+                                        if self.jewel_item_qty < item_qty:
+                                            # Are we at librarian?
+                                            if self.at_librarian:
+                                                # Assume we bought the item
+                                                self.checked_locations.append(loc["ap_id"])
+                                            else:
+                                                # We got the same item somewhere else
+                                                self.jewel_item_qty = item_qty
+
                             # Did we change area during location loop?
                             cur_area = (await bizhawk.read(ctx.bizhawk_ctx, [(0x03c774, 2, "MainRAM")]))[0]
                             if cur_area != area_value:
@@ -345,19 +373,8 @@ class SotNClient(BizHawkClient):
                                 if kill_time != 0:
                                     self.checked_locations.append(loc["ap_id"])
                             elif "vanilla_item" in loc and loc["vanilla_item"] == "Jewel of open":
-                                jewel_item = (await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd42, 2, "MainRAM")]))[0]
-                                jewel_item = int.from_bytes(jewel_item)
-
-                                if jewel_item <= 257:
-                                    item_data = id_to_item[jewel_item]
-                                    item_qty = await self.read_int(ctx, item_data["address"], 1, "MainRAM")
-                                    if self.jewel_item_qty == -1:
-                                        self.jewel_item_qty = item_qty
-                                    if item_qty > self.jewel_item_qty:
-                                        # Assume we bought item on librarian
-                                        self.checked_locations.append(loc["ap_id"])
-                                elif 300 <= jewel_item <= 329:
-                                    relic_to_check = jewel_item - 300
+                                if 300 <= self.jewel_item <= 329:
+                                    relic_to_check = self.jewel_item - 300
                                     if await self.check_relic(relic_to_check, ctx):
                                         # Assume we bought the relic
                                         self.checked_locations.append(loc["ap_id"])
