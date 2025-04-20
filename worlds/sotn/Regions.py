@@ -262,3 +262,7 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
     # Add kill Dracula
     region = name_to_region["Reverse Center Cube"]
     region.locations.append(SotnLocation(player, "Reverse Center Cube - Kill Dracula", None, region))
+
+    # Append regions to the multiworld
+    for region in regions_dict.values():
+        multiworld.regions.append(region)
