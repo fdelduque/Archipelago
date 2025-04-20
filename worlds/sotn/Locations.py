@@ -2647,7 +2647,7 @@ locations = {
             "as_relic": {},
             "vanilla_item": "Garnet",
         },
-    "Reverse Outer Wall - Breakable Wall on Room Below Mist Crate":
+    "Reverse Outer Wall - Breakable Wall on Room Bellow Mist Crate":
         {
             "ap_id": 287,
             "zones": [ZONE["RNO1"]],
@@ -4109,7 +4109,7 @@ locations = {
             "ap_id": 452,
             "game_id": 54,
             "enemy": True,
-            "zones": [ZONE["LIB"], ZONE["NO4"], ZONE["RCHI"], ZONE["RNO0"]],
+            "zones": [ZONE["LIB"], ZONE["NO4"], ZONE["CHI"], ZONE["RCHI"], ZONE["RNO0"]],
         },
     "Enemysanity - Flail guard":
         {
