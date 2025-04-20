@@ -92,6 +92,12 @@ class SotnWorld(World):
         active_locations = self.multiworld.get_unfilled_locations(self.player)
         total_location = len(active_locations)
 
+        enemysanity = self.options.enemysanity.value
+        fs_enemysanity = self.options.enemy_scroll.value
+
+        if enemysanity and fs_enemysanity:
+            items["Faerie scroll"]["classification"] = ItemClassification.progression
+
         loc = self.multiworld.get_location("Reverse Center Cube - Kill Dracula", self.player)
         loc.place_locked_item(self.create_event("Victory"))
 
