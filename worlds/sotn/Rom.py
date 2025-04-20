@@ -130,9 +130,8 @@ class SotnPatchExtension(APPatchExtension):
 
 def apply_acessibility_patches(patch: SotnProcedurePatch):
     # Researched by MottZilla.
-    # Patch Clock Room cutscene
-    patch.write_token(APTokenTypes.WRITE, 0x0aeaa0, struct.pack("<B", 0x00))
-    patch.write_token(APTokenTypes.WRITE, 0x119af4, struct.pack("<B", 0x00))
+    # Patch Clock Room cutscene 0x03ca90
+    patch.write_token(APTokenTypes.WRITE, 0x0aea9c, struct.pack("<B", 0x40))
     # Patch Alchemy Laboratory cutscene
     patch.write_token(APTokenTypes.WRITE, 0x054f0f44 + 2, (0x1000).to_bytes(2, "little"))
     # Power of Sire flashing
@@ -408,7 +407,9 @@ def replace_shop_relic_with_item(item: dict, patch: SotnProcedurePatch):
         patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
         offset += 4
     # Inventory check
-    patch.write_token(APTokenTypes.WRITE, offset, (0x3c028009).to_bytes(4, "little"))  # lui v0, 0x8009
+    # patch.write_token(APTokenTypes.WRITE, offset, (0x3c028009).to_bytes(4, "little"))  # lui v0, 0x8009
+    # Remove so the item is always on shop
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
     offset += 4
     # lbu v0, 0x798a + id (v0)
     patch.write_token(APTokenTypes.WRITE, offset, (0x90420000 + item_id + equip_inv_id_offset).to_bytes(4, "little"))
@@ -772,12 +773,14 @@ def replace_trio_relic_with_item(opts: dict, patch: SotnProcedurePatch) -> None:
 
 
 def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
-    apply_acessibility_patches(patch)
-
     option_names: List[str] = [option_name for option_name in world.options_dataclass.type_hints]
     options_dict = world.options.as_dict(*option_names)
 
-    options_dict["seed"] = int(world.multiworld.seed_name)
+    if 'W' in world.multiworld.seed_name:
+        seed_number = world.multiworld.seed_name[1:]
+    else:
+        seed_number = world.multiworld.seed_name
+    options_dict["seed"] = int(seed_number)
     options_dict["player"] = patch.player
     options_dict["player_name"] = patch.player_name
     randomize_items = options_dict["randomize_items"]
@@ -924,16 +927,8 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                 else:
                     # Turkey on breakable wall isn't no_offset
                     if loc_data["ap_id"] == 40:
-                        for address in loc_data["bin_addresses"]:
-                            patch.write_token(APTokenTypes.WRITE, address, item_id.to_bytes(2))
-                        if item_data["type"] == "RELIC":
-                            as_relic = {}
-                            if "as_relic" in loc_data:
-                                as_relic = loc_data["as_relic"]
-                            write_entity(loc_data, {"id": 0x000b, "state": item_id} | as_relic, patch)
-                        else:
-                            for address in loc_data["addresses"]:
-                                patch.write_token(APTokenTypes.WRITE, address, item_id.to_bytes(2, "little"))
+                        for address in loc_data["addresses"]:
+                            patch.write_token(APTokenTypes.WRITE, address, item_id.to_bytes(2, "little"))
                     # Bosses drop
                     elif "boss" in loc_data and loc_data["boss"]:
                         address = loc_data["bin_address"]
@@ -959,7 +954,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
             if "vanilla_item" in loc_data and loc_data["vanilla_item"] in RELIC_NAMES:
                 vanilla = loc_data["vanilla_item"]
                 if vanilla == "Jewel of open":
-                    replace_shop_relic_with_item(item_data, patch)
+                    replace_shop_relic_with_item(items["Secret boots"], patch)
                 elif vanilla == "Heart of vlad":
                     opts = {"relic": loc_data, "item": item_data, "entry": 0x034950, "inj": 0x047900}
                     replace_boss_relic_with_item(opts, patch)
@@ -1393,7 +1388,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     player_name = world.multiworld.get_player_name(world.player)
     player_num = world.player
 
-    seed_num = world.multiworld.seed_name
+    seed_num = options_dict["seed"]
 
     write_seed(patch, seed_num, player_num, player_name, sanity)
 
@@ -1405,6 +1400,9 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
 
     if options_dict["rng_start_gear"]:
         randomize_starting_equipment(world, patch)
+
+    #skip_prologue(patch)
+    apply_acessibility_patches(patch)
 
     options_dict["version"] = CURRENT_VERSION
 
@@ -1474,6 +1472,50 @@ def modify_enemies(xp_mod: int, drop_mod: int, hp_mod: int, atk_mod: int, patch:
                     continue
                     # TODO: Find galamoth attack address
                 patch.write_token(APTokenTypes.WRITE, enemy["attack_address"], atk_new.to_bytes(2, "little"))
+
+
+# Thanks eldri7ch for this
+def skip_prologue(patch: SotnProcedurePatch):
+    # Patch from Chaos-Lite / MottZilla
+    patch.write_token(APTokenTypes.WRITE, 0x04392b1c, struct.pack("<B", 0x41))
+
+    # hook address to reset time attack
+    offset = 0x00119b98
+    # place hook in relic reset
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0803fef0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+
+    offset = 0x001199b8  # start code in richter (no use in no-prologue)
+    # reset the time attack to allow bosses to spawn
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa0600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2610ffff).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0601fffd).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2463ffff).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c038003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3463ca28).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3410001b).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xac600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2610ffff).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0601fffd).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x24630004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0803ff6c).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
 
 
 def get_base_rom_bytes(audio: bool = False) -> bytes:
