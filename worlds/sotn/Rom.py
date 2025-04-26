@@ -11,6 +11,7 @@ from settings import get_settings
 from worlds.AutoWorld import World
 from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes, APPatchExtension
 from BaseClasses import Item, ItemClassification
+from .ErrorRecalc import ErrorRecalculator
 from .Items import tile_id_offset, relic_id_to_name, items, weapon1, shield, armor, helmet, cloak, accessory
 from .Locations import locations
 from .Enemies import enemy_dict
@@ -76,7 +77,7 @@ class SotnProcedurePatch(APProcedurePatch, APTokenMixin):
 
         super().patch(target)
 
-        os.rename(target, target[:-4] + ".bin")
+        os.rename(target, file_name + ".bin")
 
         audio_name = target[0:target.rfind('/') + 1]
         audio_name += "Castlevania - Symphony of the Night (USA) (Track 2).bin"
@@ -94,35 +95,14 @@ class SotnProcedurePatch(APProcedurePatch, APTokenMixin):
         cue_file += f'FILE "Castlevania - Symphony of the Night (USA) (Track 2).bin" BINARY\n  TRACK 02 AUDIO\n'
         cue_file += f'\tINDEX 00 00:00:00\n\tINDEX 01 00:02:00'
 
-        with open(target[:-4] + ".cue", 'wb') as outfile:
+        with open(file_name + ".cue", 'wb') as outfile:
             outfile.write(bytes(cue_file, 'utf-8'))
 
         # Apply Error Recalculation
-        error_recalc_path = ""
-        if platform == "win32":
-            if os.path.exists("error_recalc.exe"):
-                error_recalc_path = "error_recalc.exe"
-            elif os.path.exists(f"{home_path('lib')}\\error_recalc.exe"):
-                error_recalc_path = f"{home_path('lib')}\\error_recalc.exe"
-        elif platform.startswith("linux") or platform.startswith("darwin"):
-            if os.path.exists("error_recalc"):
-                error_recalc_path = "./error_recalc"
-            elif os.path.exists(f"{home_path('lib')}/error_recalc"):
-                error_recalc_path = f"{home_path('lib')}/error_recalc"
-        else:
-            logger.info("Error_recalc not find on /lib folder !!!")
-
-        if error_recalc_path == "":
-            try:
-                error_recalc_path = open_filename("Error recalc binary", (("All", "*.*"),))
-            except Exception as e:
-                messagebox("Error", str(e), error=True)
-
-        if error_recalc_path != "":
-            subprocess.call([error_recalc_path, target[:-4] + ".bin"])
-        else:
-            messagebox("Error", "Could not find Error_recalc binary", error=True)
-
+        error_recalculator = ErrorRecalculator(calculate_form_2_edc=False)
+        stats = error_recalculator.recalc(target_file=file_name + ".bin", base_file=get_settings().sotn_settings.rom_file)
+        print(f"{stats.identical_sectors} identical sectors out of {stats.total_sectors()}, {stats.recalc_sectors} sectors recalculated")
+        print(f"{stats.edc_blocks_computed} EDC blocks computed, {stats.ecc_blocks_generated} ECC blocks generated")
 
 class SotnPatchExtension(APPatchExtension):
     game = "Symphony of the Night"
