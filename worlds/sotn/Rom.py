@@ -389,7 +389,9 @@ def replace_shop_relic_with_item(item: dict, patch: SotnProcedurePatch):
     # Equipped check
     offset = rom_offset(zone, 0x054600)
     # ori v1, r0, id
-    patch.write_token(APTokenTypes.WRITE, offset, (0x34030000 + item_id + equip_id_offset).to_bytes(4, "little"))
+    # patch.write_token(APTokenTypes.WRITE, offset, (0x34030000 + item_id + equip_id_offset).to_bytes(4, "little"))
+    # Remove so the item is always on shop
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
     offset += 4
     for i, slot in enumerate(i_slots):
         # lui v0, 0x8009
