@@ -809,9 +809,7 @@ if __name__ == "__main__":
 
 
     # print(hex(rom_offset(0x057df998, 0x1c80)))
-    print(hex(rom_offset(0x06590a18, 0x1550)))
+    print(hex(rom_offset(0x047a1ae8, 0x054600)))
     print(hex(rom_offset(0x04e31458, 0x0d2c + 0x02 * 0)))
     print(hex(rom_offset(0x067422a8, 0x12a8)))
-    print(int(63 / 8))
-    print(63 % 8)
 
