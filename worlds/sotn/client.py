@@ -14,10 +14,9 @@ from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 
 # TODO:
 #  Visual glitches on Richter dialog
-#  Remember to try Eijebong fuzzer
 #  Lost Dopp10 item.
 #  Enemysanity relic with copy trigger
-#  Fix item bellow librarian
+#  Progression items https://discord.com/channels/731205301247803413/1108439196156317818/1359352832322572290
 
 # Ideas:
 # Lock red doors for progression
@@ -157,7 +156,10 @@ class SotNClient(BizHawkClient):
                         if room_id == 0x9470:
                             self.at_librarian = True
                         if self.at_librarian:
-                            if room_id != 0x9470:
+                            # Only leave librarian when you enter either room to the right.
+                            if room_id == 0x9870:
+                                self.at_librarian = False
+                            elif room_id == 0x9c70:
                                 self.at_librarian = False
                 except KeyError:
                     self.cur_zone = None
@@ -281,9 +283,12 @@ class SotNClient(BizHawkClient):
                         dracula_hp = await self.read_int(ctx, 0x076ed6, 2, "MainRAM")
                         if dracula_hp == 0 or dracula_hp > 60000:
                             alucard_hp = await self.read_int(ctx, 0x097ba0, 4, "MainRAM")
+                            has_control = await self.read_int(ctx, 0x072efc, 1, "MainRAM")
                             if alucard_hp != 0:
-                                dracula_dead = True
-
+                                # Did we use library card?
+                                if has_control != 4:
+                                    if room_id == 0x6ce0:
+                                        dracula_dead = True
                     # Are we entered Cave zone?
                     if not self.break_chi_wall and self.cur_zone["name"] == "Cave":
                         # Break RCHI - Demon wall 03be45
@@ -335,7 +340,8 @@ class SotNClient(BizHawkClient):
                                 continue
 
                             # Process only Librarian item when inside to prevent tactics trigger checks
-                            if self.at_librarian and name != "Long Library - Librarian Shop Item":
+                            if self.at_librarian and name not in ["Long Library - Librarian Shop Item",
+                                                                  "Long Library - Item Bellow Librarian"]:
                                 continue
 
                             # Check if we need to update jewel item
