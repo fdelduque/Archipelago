@@ -5,6 +5,8 @@
 [0.81 changes](https://youtu.be/w-Y_4slbMtA)
 [0.82 changes](https://www.youtube.com/watch?v=F_yL3QM4qYw&t=8s)
 
+[GRAB THE LAST RELEASE HERE](https://github.com/fdelduque/Archipelago/releases)
+
 ## Symphony of the Night
 Symphony of the Night is a metroidvania from playstation 1
 
