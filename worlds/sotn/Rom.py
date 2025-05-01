@@ -104,6 +104,7 @@ class SotnProcedurePatch(APProcedurePatch, APTokenMixin):
         print(f"{stats.identical_sectors} identical sectors out of {stats.total_sectors()}, {stats.recalc_sectors} sectors recalculated")
         print(f"{stats.edc_blocks_computed} EDC blocks computed, {stats.ecc_blocks_generated} ECC blocks generated")
 
+
 class SotnPatchExtension(APPatchExtension):
     game = "Symphony of the Night"
 
@@ -774,6 +775,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     local_relics = {}
     copy1_relics = {}
     enemysanity_items = []
+    dopp10_item = 0
 
     for loc in world.multiworld.get_locations(world.player):
         # Save Jewel of open item
@@ -784,6 +786,10 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
             jewel_item = item_data["id"]
             patch.write_token(APTokenTypes.WRITE, 0xf4f3a, jewel_item.to_bytes(2))
             patch.write_token(APTokenTypes.WRITE, 0x438d6d2, jewel_item.to_bytes(2, "little"))
+
+        # Save Doppelganger10 item
+        if loc.name == "Outer Wall - Doppleganger 10 item":
+            dopp10_item = items[loc.item.name]
 
         if loc.item and loc.item.player == world.player:
             if loc.item.name == "Victory":
@@ -1099,7 +1105,11 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                 patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", relic_byte))
                 patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", relic_byte))
                 start_address += 1
-        # Terminate
+        # WRITE DOPP 10 ITEM and Terminate
+        item_id = dopp10_item["id"]
+        patch.write_token(APTokenTypes.WRITE, start_address, item_id.to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, item_id.to_bytes(2))
+        start_address += 2
         patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
         patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
 
