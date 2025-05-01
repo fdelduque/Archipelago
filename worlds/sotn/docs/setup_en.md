@@ -16,7 +16,7 @@ Symphony of the Night is a metroidvania from playstation 1
 
 ### Instalation
 Download the last apworld version from releases page.  
-(THIS STEP IS NO LONGER REQUIRED)Download error recalc software
+(THIS STEP IS NO LONGER REQUIRED)Download error recalc software<br />
 Run ArchipelagoLauncher and choose Install APWorld, select your downloaded sotn.apworld, restart if asked.  
 
 # Playing
