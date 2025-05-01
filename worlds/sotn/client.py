@@ -10,13 +10,13 @@ from Utils import messagebox
 from .Items import items, id_to_item, item_id_to_name
 from .Rom import bytes_as_items
 from .data.Zones import zones, AREA_FLAG_TO_ZONE
+from .data.Constants import RELIC_NAMES
 from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 
 # TODO:
 #  Visual glitches on Richter dialog
-#  Lost Dopp10 item.
-#  Enemysanity relic with copy trigger
 #  Progression items https://discord.com/channels/731205301247803413/1108439196156317818/1359352832322572290
+#  Relic on platinum mail TOP too low
 
 # Ideas:
 # Lock red doors for progression
@@ -322,12 +322,16 @@ class SotNClient(BizHawkClient):
                                 self.received_queue.append(item_received.item)
                                 # Did we receive a relic?
                                 if 300 <= item_received.item <= 329:
+                                    relic_name = item_id_to_name[item_received.item]
                                     relic_id = item_received.item - 300
                                     index_to_check = relic_id if relic_id <= 22 else relic_id - 2
                                     if self.relic_placement[index_to_check] != 0xfff:
                                         self.checked_locations.append(self.relic_placement[index_to_check])
                                     if len(self.copy_placement) and self.copy_placement[index_to_check] != 0xfff:
                                         self.checked_locations.append(self.copy_placement[index_to_check])
+                                    if relic_name in self.enemysanity_items.values():
+                                        inverted_enemysanity = {v: k for k, v in self.enemysanity_items.items()}
+                                        self.checked_locations.append(inverted_enemysanity[relic_name])
                                 self.message_queue.append(f"Granted: {item_id_to_name[item_received.item]}")
                                 self.last_item_received = i + 1
                                 await bizhawk.write(
@@ -378,6 +382,32 @@ class SotNClient(BizHawkClient):
                                 kill_time = await self.read_int(ctx, loc["kill_time"], 2, "MainRAM")
                                 if kill_time != 0:
                                     self.checked_locations.append(loc["ap_id"])
+                                    if name == "Reverse Caverns - Doppleganger 40 item":
+                                        # Check if we kill Dopp10
+                                        if 388 not in self.checked_locations:
+                                            self.checked_locations.append(388)
+                                            dopp10_item = await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd34, 2, "MainRAM")])
+                                            dopp10_item = int.from_bytes(dopp10_item[0])
+                                            await self.grant_item(id_to_item[dopp10_item], ctx)
+                                            self.message_queue.append(f"Granted: {item_id_to_name[dopp10_item]}")
+                                            # Check Dopp10 enemysanity?
+                                            if len(self.enemysanity_items):
+                                                self.checked_locations.append(
+                                                    locations["Enemysanity - Doppleganger10"]["ap_id"])
+                                                if self.enemysanity_items["Enemysanity - Doppleganger10"] != 0xfff:
+                                                    item_to_grant = item_id_to_name[
+                                                        self.enemysanity_items["Enemysanity - Doppleganger10"]]
+                                                    await self.grant_item(items[item_to_grant], ctx)
+                                                    self.message_queue.append(f"Granted: {item_to_grant}")
+                                                    enemy_flag = await self.read_int(ctx, 0x03bf80, 1, "MainRAM")
+                                                    enemy_flag |= (1 << 1)
+                                                    await bizhawk.write(ctx.bizhawk_ctx,
+                                                                        [(0x03bf80, enemy_flag.to_bytes(), "MainRAM")])
+
+                                                    save_value = await self.read_int(ctx, 0x03bed4, 1, "MainRAM")
+                                                    save_value |= 0x02
+                                                    await bizhawk.write(ctx.bizhawk_ctx,
+                                                                        [(0x03bed4, save_value.to_bytes(), "MainRAM")])
                             elif "vanilla_item" in loc and loc["vanilla_item"] == "Jewel of open":
                                 if 300 <= self.jewel_item <= 329:
                                     relic_to_check = self.jewel_item - 300
@@ -392,18 +422,26 @@ class SotNClient(BizHawkClient):
                                 # This location is a relic?
                                 relic_id = self.relic_placement.index(loc["ap_id"])
                                 relic_to_check = relic_id if relic_id <= 22 else relic_id + 2
+                                relic_name = item_id_to_name[relic_to_check + 300]
                                 if await self.check_relic(relic_to_check, ctx):
                                     self.checked_locations.append(loc["ap_id"])
                                     if len(self.copy_placement) and self.copy_placement[relic_id] != 0xfff:
                                         self.checked_locations.append(self.copy_placement[relic_id])
+                                    if relic_name in self.enemysanity_items.values():
+                                        inverted_enemysanity = {v: k for k, v in self.enemysanity_items.items()}
+                                        self.checked_locations.append(inverted_enemysanity[relic_name])
                             elif (len(self.copy_placement) and loc["ap_id"] in self.copy_placement and
                                   "enemy" not in loc):
                                 # This location is a relic?
                                 relic_id = self.copy_placement.index(loc["ap_id"])
                                 relic_to_check = relic_id if relic_id <= 22 else relic_id + 2
+                                relic_name = item_id_to_name[relic_to_check + 300]
                                 if await self.check_relic(relic_to_check, ctx):
                                     self.checked_locations.append(loc["ap_id"])
                                     self.checked_locations.append(self.relic_placement[relic_id])
+                                if relic_name in self.enemysanity_items.values():
+                                    inverted_enemysanity = {v: k for k, v in self.enemysanity_items.items()}
+                                    self.checked_locations.append(inverted_enemysanity[relic_name])
                             elif "enemy" in loc and loc["enemy"]:
                                 if self.enemy_scroll != "READY":
                                     continue
@@ -419,11 +457,19 @@ class SotNClient(BizHawkClient):
                                     if self.enemysanity_items[name] != 0xfff:
                                         enemy_loot = item_id_to_name[self.enemysanity_items[name]]
                                         await self.grant_item(items[enemy_loot], ctx)
+                                        self.message_queue.append(f"Granted: {enemy_loot}")
                                         save_flag = await self.read_int(ctx, save_address, 1, "MainRAM")
                                         save_flag |= (1 << bit_check)
                                         await bizhawk.write(ctx.bizhawk_ctx, [(save_address,
                                                                                save_flag.to_bytes(),
                                                                                "MainRAM")])
+                                        # Check if a relic have a copy somewhere
+                                        if enemy_loot in RELIC_NAMES:
+                                            relic_id = items[enemy_loot]["id"] - 300
+                                            if self.relic_placement[relic_id] != 0xfff:
+                                                self.checked_locations.append(self.relic_placement[relic_id])
+                                            if len(self.copy_placement) and self.copy_placement[relic_id] != 0xfff:
+                                                self.checked_locations.append(self.copy_placement[relic_id])
                             else:
                                 if loot_flag & (1 << loc["index"]):
                                     self.checked_locations.append(loc["ap_id"])
@@ -448,6 +494,7 @@ class SotNClient(BizHawkClient):
                             if self.enemysanity_items["Enemysanity - Warg"] != 0xfff:
                                 item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Warg"]]
                                 await self.grant_item(items[item_to_grant], ctx)
+                                self.message_queue.append(f"Granted: {item_to_grant}")
                                 save_value = await self.read_int(ctx, 0x03becf, 1, "MainRAM")
                                 save_value |= 0x80
                                 await bizhawk.write(ctx.bizhawk_ctx, [(0x03becf, save_value.to_bytes(), "MainRAM")])
@@ -461,6 +508,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Gaibon"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Gaibon"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed2, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed2, save_value.to_bytes(), "MainRAM")])
@@ -469,6 +517,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Slogra"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Slogra"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed2, 1, "MainRAM")
                                     save_value |= 0x10
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed2, save_value.to_bytes(), "MainRAM")])
@@ -484,6 +533,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items[loc_name] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items[loc_name]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed4, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed4, save_value.to_bytes(), "MainRAM")])
@@ -492,6 +542,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Scylla wyrm"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Scylla wyrm"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed4, 1, "MainRAM")
                                     save_value |= 0x10
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed4, save_value.to_bytes(), "MainRAM")])
@@ -506,6 +557,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Scylla"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Scylla"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed7, 1, "MainRAM")
                                     save_value |= 0x04
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed7, save_value.to_bytes(), "MainRAM")])
@@ -518,6 +570,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Hippogryph"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Hippogryph"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed8, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed8, save_value.to_bytes(), "MainRAM")])
@@ -530,6 +583,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Minotaurus"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Minotaurus"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed9, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed9, save_value.to_bytes(), "MainRAM")])
@@ -538,6 +592,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Werewolf"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Werewolf"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bed9, 1, "MainRAM")
                                     save_value |= 0x04
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bed9, save_value.to_bytes(), "MainRAM")])
@@ -550,6 +605,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Karasuman"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Karasuman"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03beda, 1, "MainRAM")
                                     save_value |= 0x40
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03beda, save_value.to_bytes(), "MainRAM")])
@@ -562,6 +618,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Cerberos"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Cerberos"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedb, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedb, save_value.to_bytes(), "MainRAM")])
@@ -570,6 +627,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Olrox"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Olrox"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedb, 1, "MainRAM")
                                     save_value |= 0x08
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedb, save_value.to_bytes(), "MainRAM")])
@@ -578,6 +636,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Succubus"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Succubus"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedb, 1, "MainRAM")
                                     save_value |= 0x10
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedb, save_value.to_bytes(), "MainRAM")])
@@ -590,6 +649,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Granfaloon"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Granfaloon"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedc, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedc, save_value.to_bytes(), "MainRAM")])
@@ -602,6 +662,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Darkwing bat"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Darkwing bat"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedd, 1, "MainRAM")
                                     save_value |= 0x20
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedd, save_value.to_bytes(), "MainRAM")])
@@ -616,6 +677,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Akmodan II"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Akmodan II"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bedf, 1, "MainRAM")
                                     save_value |= 0x40
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bedf, save_value.to_bytes(), "MainRAM")])
@@ -629,6 +691,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items[loc_name] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items[loc_name]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x01
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -637,6 +700,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Medusa"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Medusa"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x02
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -645,6 +709,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - The creature"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - The creature"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x04
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -653,6 +718,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Fake Grant"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Fake Grant"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x08
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -661,6 +727,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Fake Trevor"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Fake Trevor"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x10
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -669,6 +736,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Fake Sipha"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Fake Sipha"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x40
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -677,6 +745,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Beezelbub"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Beezelbub"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee0, 1, "MainRAM")
                                     save_value |= 0x80
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee0, save_value.to_bytes(), "MainRAM")])
@@ -689,6 +758,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Galamoth"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Galamoth"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee1, 1, "MainRAM")
                                     save_value |= 0x20
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee1, save_value.to_bytes(), "MainRAM")])
@@ -697,6 +767,7 @@ class SotNClient(BizHawkClient):
                                 if self.enemysanity_items["Enemysanity - Death"] != 0xfff:
                                     item_to_grant = item_id_to_name[self.enemysanity_items["Enemysanity - Death"]]
                                     await self.grant_item(items[item_to_grant], ctx)
+                                    self.message_queue.append(f"Granted: {item_to_grant}")
                                     save_value = await self.read_int(ctx, 0x03bee1, 1, "MainRAM")
                                     save_value |= 0x80
                                     await bizhawk.write(ctx.bizhawk_ctx, [(0x03bee1, save_value.to_bytes(), "MainRAM")])
@@ -730,7 +801,6 @@ class SotNClient(BizHawkClient):
         # Read relic placement on the RAM
         relics_placement = (await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfcdc, 95, "MainRAM")]))[0]
         placements_list = list(relics_placement)
-        have_copy = True
 
         # Defeat Minoutaur and Werewolf 30/30 bytes
         for i in range(0, 30, 3):
