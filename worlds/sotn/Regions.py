@@ -22,12 +22,12 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
         7: Region("Long Library", player, multiworld),
         8: Region("Marble Gallery", player, multiworld),
         9: Region("Outer Wall", player, multiworld),
-        10: Region("Olrox\'s Quarters", player, multiworld),
+        # 10: Region("Olrox\'s Quarters", player, multiworld),
         11: Region("Castle Entrance", player, multiworld),
-        13: Region("Underground Caverns", player, multiworld),
+        # 13: Region("Underground Caverns", player, multiworld),
         14: Region("Alchemy Laboratory", player, multiworld),
-        15: Region("Clock Tower", player, multiworld),
-        16: Region("Castle Keep", player, multiworld),
+        #  15: Region("Clock Tower", player, multiworld),
+        #  16: Region("Castle Keep", player, multiworld),
         18: Region("Reverse Colosseum", player, multiworld),
         19: Region("Floating Catacombs", player, multiworld),
         20: Region("Reverse Center Cube", player, multiworld),
@@ -195,10 +195,10 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
                 region = name_to_region["Castle Entrance"]
             elif zone == ZONE["DRE"]:
                 # Nightmare
-                region = name_to_region["Underground Caverns"]
+                region = name_to_region["Upper Underground Caverns"]
             elif zone == ZONE["BO0"]:
                 # Olrox
-                region = name_to_region["Olrox\'s Quarters"]
+                region = name_to_region["Upper Olrox\'s Quarters"]
             elif zone == ZONE["BO1"]:
                 # Legion
                 region = name_to_region["Catacombs"]
@@ -207,7 +207,7 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
                 region = name_to_region["Colosseum"]
             elif zone == ZONE["BO3"]:
                 # Scylla
-                region = name_to_region["Underground Caverns"]
+                region = name_to_region["Upper Underground Caverns"]
             elif zone == ZONE["BO4"]:
                 # Dopp10
                 region = name_to_region["Outer Wall"]
