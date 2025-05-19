@@ -6,6 +6,1115 @@ equip_id_offset = -0xa9
 # This is applied to equipment ids to get the inventory slot it occupies
 equip_inv_id_offset = 0x798a
 
+shop_item_data = {
+    1: {
+        "itemName": "Potion",
+        "itemPriceH": 0x00000320,
+        "itemPriceD": 800,
+        "priceAddress": 0x047a30a0,
+    },
+    2: {
+        "itemName": "High potion",
+        "itemPriceH": 0x000007d0,
+        "itemPriceD": 2000,
+        "priceAddress": 0x047a30a8,
+    },
+    3: {
+        "itemName": "Elixir",
+        "itemPriceH": 0x00001f40,
+        "itemPriceD": 8000,
+        "priceAddress": 0x047a30b0,
+    },
+    4: {
+        "itemName": "Manna prism",
+        "itemPriceH": 0x00000fa0,
+        "itemPriceD": 4000,
+        "priceAddress": 0x047a30b8,
+    },
+    5: {
+        "itemName": "Antivenom",
+        "itemPriceH": 0x000000c8,
+        "itemPriceD": 200,
+        "priceAddress": 0x047a30c0,
+    },
+    6: {
+        "itemName": "Uncurse",
+        "itemPriceH": 0x000000c8,
+        "itemPriceD": 200,
+        "priceAddress": 0x047a30c8,
+    },
+    7: {
+        "itemName": "Hammer",
+        "itemPriceH": 0x000000c8,
+        "itemPriceD": 200,
+        "priceAddress": 0x047a30d0,
+    },
+    8: {
+        "itemName": "Magic Missile",
+        "itemPriceH": 0x0000012c,
+        "itemPriceD": 300,
+        "priceAddress": 0x047a30d8,
+    },
+    9: {
+        "itemName": "Bwaka knife",
+        "itemPriceH": 0x00000190,
+        "itemPriceD": 400,
+        "priceAddress": 0x047a30e0,
+    },
+    10: {
+        "itemName": "Boomerang",
+        "itemPriceH": 0x000001f4,
+        "itemPriceD": 500,
+        "priceAddress": 0x047a30e8,
+    },
+    11: {
+        "itemName": "Javelin",
+        "itemPriceH": 0x00000320,
+        "itemPriceD": 800,
+        "priceAddress": 0x047a30f0,
+    },
+    12: {
+        "itemName": "Fire boomerang",
+        "itemPriceH": 0x000003e8,
+        "itemPriceD": 1000,
+        "priceAddress": 0x047a30f8,
+    },
+    13: {
+        "itemName": "Shuriken",
+        "itemPriceH": 0x00000960,
+        "itemPriceD": 2400,
+        "priceAddress": 0x047a3100,
+    },
+    14: {
+        "itemName": "Cross shuriken",
+        "itemPriceH": 0x00001388,
+        "itemPriceD": 2400,
+        "priceAddress": 0x047a3100,
+    },
+    15: {
+        "itemName": "Buffalo star",
+        "itemPriceH": 0x00001388,
+        "itemPriceD": 5000,
+        "priceAddress": 0x047a3108,
+    },
+    16: {
+        "itemName": "Flame star",
+        "itemPriceH": 0x00001f40,
+        "itemPriceD": 8000,
+        "priceAddress": 0x047a3110,
+    },
+    17: {
+        "itemName": "Library card",
+        "itemPriceH": 0x000001f4,
+        "itemPriceD": 500,
+        "priceAddress": 0x047a3120,
+    },
+    18: {
+        "itemName": "Meal ticket",
+        "itemPriceH": 0x000007d0,
+        "itemPriceD": 2000,
+        "priceAddress": 0x047a3128,
+    },
+    19: {
+        "itemName": "Saber",
+        "itemPriceH": 0x000005dc,
+        "itemPriceD": 1500,
+        "priceAddress": 0x047a3130,
+    },
+    20: {
+        "itemName": "Mace",
+        "itemPriceH": 0x000007d0,
+        "itemPriceD": 2000,
+        "priceAddress": 0x047a3138,
+    },
+    21: {
+        "itemName": "Damascus sword",
+        "itemPriceH": 0x00000fa0,
+        "itemPriceD": 4000,
+        "priceAddress": 0x047a3140,
+    },
+    22: {
+        "itemName": "Firebrand",
+        "itemPriceH": 0x00002710,
+        "itemPriceD": 10000,
+        "priceAddress": 0x047a3148,
+    },
+    23: {
+        "itemName": "Icebrand",
+        "itemPriceH": 0x00002710,
+        "itemPriceD": 10000,
+        "priceAddress": 0x047a3150,
+    },
+    24: {
+        "itemName": "Thunderbrand",
+        "itemPriceH": 0x00002710,
+        "itemPriceD": 10000,
+        "priceAddress": 0x047a3158,
+    },
+    25: {
+        "itemName": "Harper",
+        "itemPriceH": 0x00002ee0,
+        "itemPriceD": 12000,
+        "priceAddress": 0x047a3160,
+    },
+    26: {
+        "itemName": "Leather shield",
+        "itemPriceH": 0x00000190,
+        "itemPriceD": 400,
+        "priceAddress": 0x047a3168,
+    },
+    27: {
+        "itemName": "Iron shield",
+        "itemPriceH": 0x00000fbc,
+        "itemPriceD": 3980,
+        "priceAddress": 0x047a3170,
+    },
+    28: {
+        "itemName": "Velvet hat",
+        "itemPriceH": 0x00000190,
+        "itemPriceD": 400,
+        "priceAddress": 0x047a3178,
+    },
+    29: {
+        "itemName": "Leather hat",
+        "itemPriceH": 0x000003e8,
+        "itemPriceD": 1000,
+        "priceAddress": 0x047a3180,
+    },
+    30: {
+        "itemName": "Circlet",
+        "itemPriceH": 0x00000fa0,
+        "itemPriceD": 4000,
+        "priceAddress": 0x047a3188,
+    },
+    31: {
+        "itemName": "Silver crown",
+        "itemPriceH": 0x00002ee0,
+        "itemPriceD": 12000,
+        "priceAddress": 0x047a3190,
+    },
+    32: {
+        "itemName": "Iron cuirass",
+        "itemPriceH": 0x000005dc,
+        "itemPriceD": 1500,
+        "priceAddress": 0x047a3198,
+    },
+    33: {
+        "itemName": "Steel cuirass",
+        "itemPriceH": 0x00000fa0,
+        "itemPriceD": 4000,
+        "priceAddress": 0x047a31a0,
+    },
+    34: {
+        "itemName": "Diamond plate",
+        "itemPriceH": 0x00002ee0,
+        "itemPriceD": 12000,
+        "priceAddress": 0x047a31a8,
+    },
+    35: {
+        "itemName": "Reverse cloak",
+        "itemPriceH": 0x000007d0,
+        "itemPriceD": 2000,
+        "priceAddress": 0x047a31b0,
+    },
+    36: {
+        "itemName": "Elven cloak",
+        "itemPriceH": 0x00000bb8,
+        "itemPriceD": 3000,
+        "priceAddress": 0x047a31b8,
+    },
+    37: {
+        "itemName": "Joseph's cloak",
+        "itemPriceH": 0x00007530,
+        "itemPriceD": 30000,
+        "priceAddress": 0x047a31c0,
+    },
+    38: {
+        "itemName": "Medal",
+        "itemPriceH": 0x00000bb8,
+        "itemPriceD": 3000,
+        "priceAddress": 0x047a31c8,
+    },
+    39: {
+        "itemName": "Ring of Pales",
+        "itemPriceH": 0x00000fa0,
+        "itemPriceD": 4000,
+        "priceAddress": 0x047a31d0,
+    },
+    40: {
+        "itemName": "Gauntlet",
+        "itemPriceH": 0x00001f40,
+        "itemPriceD": 8000,
+        "priceAddress": 0x047a31d8,
+    },
+    41: {
+        "itemName": "Duplicator",
+        "itemPriceH": 0x0007a120,
+        "itemPriceD": 500000,
+        "priceAddress": 0x047a31e0,
+    },
+}
+
+start_room_data = {
+    1: {
+        "comment": "Bottom of Forbidden Route",
+        "stage": 0x00,  # Marble Gallery
+        "room": 0,
+        "xPos": 48,
+        "yPos": 644,
+        "xyWrite": 0x02840030,
+        "roomWrite": 0x00410000,
+        "stageWrite": 0x0000
+    },
+    "2": {
+        "comment":  "Top of Spirit Orb room",
+        "stage":  0x00,                                                                 # Marble Gallery
+        "room":  2,
+        "xPos":  332,
+        "yPos":  244,
+        "xyWrite":  0x00F4014C,
+        "roomWrite":  0x00410010,
+        "stageWrite":  0x0000
+    },
+    "3": {
+        "comment":  "Middle of the long hallway",
+        "stage":  0x00,                                                                 # Marble Gallery
+        "room":  8,
+        "xPos":  1920,
+        "yPos":  164,
+        "xyWrite":  0x00a40780,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x0000
+    },
+    "4": {
+        "comment":  "Alucart room",
+        "stage":  0x00,                                                                 # Marble Gallery
+        "room":  14,
+        "xPos":  128,
+        "yPos":  164,
+        "xyWrite":  0x00a40080,
+        "roomWrite":  0x00410070,
+        "stageWrite":  0x0000
+    },
+    "5": {
+        "comment":  "Gravity Boots items",
+        "stage":  0x00,                                                                 # Marble Gallery
+        "room":  20,
+        "xPos":  192,
+        "yPos":  148,
+        "xyWrite":  0x009400c0,
+        "roomWrite":  0x004100a0,
+        "stageWrite":  0x0000
+    },
+    "6": {
+        "comment":  "Same room but across from Telescope",
+        "stage":  0x01,                                                                 # Outer Wall
+        "room":  3,
+        "xPos":  724,
+        "yPos":  164,
+        "xyWrite":  0x00A402D4,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x0001
+    },
+    "7": {
+        "comment":  "Secret elevator room",
+        "stage":  0x01,                                                                 # Outer Wall
+        "room":  6,
+        "xPos":  56,
+        "yPos":  164,
+        "xyWrite":  0x00a40038,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x0001
+    },
+    "8": {
+        "comment":  "Gladius room",
+        "stage":  0x01,                                                                 # Outer Wall
+        "room":  12,
+        "xPos":  128,
+        "yPos":  164,
+        "xyWrite":  0x00A40080,
+        "roomWrite":  0x00410060,
+        "stageWrite":  0x0001
+    },
+    "9": {
+        "comment":  "Bookshelf room",
+        "stage":  0x02,                                                                 # Long Library
+        "room":  1,
+        "xPos":  88,
+        "yPos":  148,
+        "xyWrite":  0x00940058,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0002
+    },
+    "10": {
+        "comment":  "Shop hallway",
+        "stage":  0x02,                                                                 # Long Library
+        "room":  5,
+        "xPos":  16,
+        "yPos":  148,
+        "xyWrite":  0x00940010,
+        "roomWrite":  0x00410028,
+        "stageWrite":  0x0002
+    },
+    "11": {
+        "comment":  "Faerie Card room",
+        "stage":  0x02,                                                                 # Long Library
+        "room":  7,
+        "xPos":  208,
+        "yPos":  148,
+        "xyWrite":  0x009400D0,
+        "roomWrite":  0x00410038,
+        "stageWrite":  0x0002
+    },
+    "12": {
+        "comment":  "One-dollar room",
+        "stage":  0x03,                                                                 # Catacombs
+        "room":  5,
+        "xPos":  100,
+        "yPos":  164,
+        "xyWrite":  0x00A40064,
+        "roomWrite":  0x00410028,
+        "stageWrite":  0x0003
+    },
+    "13": {
+        "comment":  "Icebrand room",
+        "stage":  0x03,                                                                 # Catacombs
+        "room":  9,
+        "xPos":  56,
+        "yPos":  164,
+        "xyWrite":  0x00a40038,
+        "roomWrite":  0x00410048,
+        "stageWrite":  0x0003
+    },
+    "14": {
+        "comment":  "Elevator in Slime room",
+        "stage":  0x03,                                                                 # Catacombs
+        "room":  23,
+        "xPos":  352,
+        "yPos":  228,
+        "xyWrite":  0x00E40160,
+        "roomWrite":  0x004100B8,
+        "stageWrite":  0x0003
+    },
+    "15": {
+        "comment":  "Top left of Spectral Sword room",
+        "stage":  0x04,                                                                 # Olrox's Quarters
+        "room":  2,
+        "xPos":  48,
+        "yPos":  132,
+        "xyWrite":  0x00840030,
+        "roomWrite":  0x00410010,
+        "stageWrite":  0x0004
+    },
+    "16": {
+        "comment":  "Vase shaft",
+        "stage":  0x04,                                                                 # Olrox's Quarters
+        "room":  6,
+        "xPos":  118,
+        "yPos":  388,
+        "xyWrite":  0x01840076,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x0004
+    },
+    "17": {
+        "comment":  "Olrox Garnet room",
+        "stage":  0x04,                                                                 # Olrox's Quarters
+        "room":  10,
+        "xPos":  128,
+        "yPos":  164,
+        "xyWrite":  0x00A40080,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x0004
+    },
+    "18": {
+        "comment":  "Item cubby in boss hallway",
+        "stage":  0x04,                                                                 # Olrox's Quarters
+        "room":  11,
+        "xPos":  468,
+        "yPos":  208,
+        "xyWrite":  0x00d001d4,
+        "roomWrite":  0x00410058,
+        "stageWrite":  0x0004
+    },
+    "19": {
+        "comment":  "Room before Cerberus",
+        "stage":  0x05,                                                                 # Abandoned Mine
+        "room":  1,
+        "xPos":  254,
+        "yPos":  148,
+        "xyWrite":  0x009400FE,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0005
+    },
+    "20": {
+        "comment":  "Combat Knife room",
+        "stage":  0x05,                                                                 # Abandoned Mine
+        "room":  9,
+        "xPos":  208,
+        "yPos":  148,
+        "xyWrite":  0x009400D0,
+        "roomWrite":  0x00410048,
+        "stageWrite":  0x0005
+    },
+    "21": {
+        "comment":  "Spike hallway",
+        "stage":  0x06,                                                                 # Royal Chapel
+        "room":  1,
+        "xPos":  1064,
+        "yPos":  132,
+        "xyWrite":  0x00840428,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0006
+    },
+    "22": {
+        "comment":  "Confessional",
+        "stage":  0x06,                                                                 # Royal Chapel
+        "room":  7,
+        "xPos":  96,
+        "yPos":  164,
+        "xyWrite":  0x00a40060,
+        "roomWrite":  0x00410038,
+        "stageWrite":  0x0006
+    },
+    "23": {
+        "comment":  "Goggles location",
+        "stage":  0x06,                                                                 # Royal Chapel
+        "room":  8,
+        "xPos":  196,
+        "yPos":  276,
+        "xyWrite":  0x011400c4,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x0006
+    },
+    "24": {
+        "comment":  "Bottom of the Stairs",
+        "stage":  0x06,                                                                 # Royal Chapel
+        "room":  11,
+        "xPos":  208,
+        "yPos":  1700,
+        "xyWrite":  0x06A400D0,
+        "roomWrite":  0x00410058,
+        "stageWrite":  0x0006
+    },
+    "25": {
+        "comment":  "Top of the tower closest to Keep",
+        "stage":  0x06,                                                                 # Royal Chapel
+        "room":  17,
+        "xPos":  510,
+        "yPos":  228,
+        "xyWrite":  0x00E401FE,
+        "roomWrite":  0x00410088,
+        "stageWrite":  0x0006
+    },
+    "26": {
+        "comment":  "Power of Wolf",
+        "stage":  0x07,                                                                 # Castle Entrance
+        "room":  0,
+        "xPos":  220,
+        "yPos":  132,
+        "xyWrite":  0x008400dc,
+        "roomWrite":  0x00410000,
+        "stageWrite":  0x0007
+    },
+    "27": {
+        "comment":  "Holy Mail ledge",
+        "stage":  0x07,                                                                 # Castle Entrance
+        "room":  3,
+        "xPos":  110,
+        "yPos":  72,
+        "xyWrite":  0x0048006E,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x0007
+    },
+    "28": {
+        "comment":  "On the Teleporter shortcut switch",
+        "stage":  0x07,                                                                 # Castle Entrance
+        "room":  16,
+        "xPos":  104,
+        "yPos":  160,
+        "xyWrite":  0x00A00068,
+        "roomWrite":  0x00410080,
+        "stageWrite":  0x0007
+    },
+    "29": {
+        "comment":  "Drawer room",
+        "stage":  0x09,                                                                 # Underground Caverns
+        "room":  4,
+        "xPos":  224,
+        "yPos":  148,
+        "xyWrite":  0x009400E0,
+        "roomWrite":  0x00410020,
+        "stageWrite":  0x0009
+    },
+    "30": {
+        "comment":  "Top of Succubus stairs",
+        "stage":  0x09,                                                                 # Underground Caverns
+        "room":  6,
+        "xPos":  172,
+        "yPos":  132,
+        "xyWrite":  0x008400ac,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x0009
+    },
+    "31": {
+        "comment":  "Bottom of waterfall",
+        "stage":  0x09,                                                                 # Underground Caverns
+        "room":  26,
+        "xPos":  316,
+        "yPos":  1412,
+        "xyWrite":  0x0584013c,
+        "roomWrite":  0x004100d0,
+        "stageWrite":  0x0009
+    },
+    "32": {
+        "comment":  "Merman Statue room",
+        "stage":  0x09,                                                                 # Underground Caverns
+        "room":  21,
+        "xPos":  208,
+        "yPos":  132,
+        "xyWrite":  0x008400D0,
+        "roomWrite":  0x004100A8,
+        "stageWrite":  0x0009
+    },
+    "33": {
+        "comment":  "Opening shortcut",
+        "stage":  0x0a,                                                                 # Colosseum
+        "room":  4,
+        "xPos":  168,
+        "yPos":  156,
+        "xyWrite":  0x009c00a8,
+        "roomWrite":  0x00410020,
+        "stageWrite":  0x000a
+    },
+    "34": {
+        "comment":  "Open elevator",
+        "stage":  0x0a,                                                                 # Colosseum
+        "room":  6,
+        "xPos":  72,
+        "yPos":  128,
+        "xyWrite":  0x00800048,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x000a
+    },
+    "35": {
+        "comment":  "Blood cloak room",
+        "stage":  0x0a,                                                                 # Colosseum
+        "room":  10,
+        "xPos":  54,
+        "yPos":  164,
+        "xyWrite":  0x00A40036,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x000A
+    },
+    "36": {
+        "comment":  "Attic",
+        "stage":  0x0b,                                                                 # Castle Keep
+        "room":  0,
+        "xPos":  64,
+        "yPos":  164,
+        "xyWrite":  0x00a40040,
+        "roomWrite":  0x00410000,
+        "stageWrite":  0x000b
+    },
+    "37": {
+        "comment":  "Falchion room",
+        "stage":  0x0b,                                                                 # Castle Keep
+        "room":  5,
+        "xPos":  100,
+        "yPos":  164,
+        "xyWrite":  0x00A40064,
+        "roomWrite":  0x00410028,
+        "stageWrite":  0x000B
+    },
+    "38": {
+        "comment":  "Tyrfing room",
+        "stage":  0x0b,                                                                 # Castle Keep
+        "room":  8,
+        "xPos":  156,
+        "yPos":  164,
+        "xyWrite":  0x00A4009C,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x000B
+    },
+    "39": {
+        "comment":  "Cloth cape room",
+        "stage":  0x0c,                                                                 # Alchemy Laboratory
+        "room":  5,
+        "xPos":  128,
+        "yPos":  164,
+        "xyWrite":  0x00A40080,
+        "roomWrite":  0x00410028,
+        "stageWrite":  0x000C
+    },
+    "40": {
+        "comment":  "Sunglasses room",
+        "stage":  0x0c,                                                                 # Alchemy Laboratory
+        "room":  6,
+        "xPos":  128,
+        "yPos":  164,
+        "xyWrite":  0x00a40080,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x000c
+    },
+    "41": {
+        "comment":  "Skill of Wolf room",
+        "stage":  0x0c,                                                                 # Alchemy Laboratory
+        "room":  8,
+        "xPos":  208,
+        "yPos":  132,
+        "xyWrite":  0x008400D0,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x000C
+    },
+    "42": {
+        "comment":  "Middle of the maze room with pendulums",
+        "stage":  0x0d,                                                                 # Clock Tower
+        "room":  3,
+        "xPos":  1090,
+        "yPos":  84,
+        "xyWrite":  0x00540442,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x000D
+    },
+    "43": {
+        "comment":  "Fire of Bat ledge in large room",
+        "stage":  0x0d,                                                                 # Clock Tower
+        "room":  10,
+        "xPos":  1456,
+        "yPos":  132,
+        "xyWrite":  0x008405B0,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x000D
+    },
+    "44": {
+        "comment":  "Ledge with a column (left side of large room)",
+        "stage":  0x0d,                                                                 # Clock Tower
+        "room":  10,
+        "xPos":  216,
+        "yPos":  308,
+        "xyWrite":  0x013400d8,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x000d
+    },
+    "45": {  # IMPORTANT CASTLE 2 NOTES: stage number must be correct, but stageWrite should mask off bit 0x20.
+        "comment":  "Black Marble Gallery (Reverse Forbidden)",
+        "stage":  0x20,
+        "room":  0,
+        "xPos":  144,
+        "yPos":  540,
+        "xyWrite":  0x021c0090,
+        "roomWrite":  0x00410000,
+        "stageWrite":  0x0000  # Castle 2 Stage Numbers should mask off the 0x20 bit.
+    },
+    "46": {
+        "comment":  "Black Marble Gallery (Reverse Alucart)",
+        "stage":  0x20,
+        "room":  14,
+        "xPos":  232,
+        "yPos":  128,
+        "xyWrite":  0x008000e8,
+        "roomWrite":  0x00410070,
+        "stageWrite":  0x0000
+    },
+    "47": {
+        "comment":  "Black Marble Gallery (Reverse Library Card)",
+        "stage":  0x20,
+        "room":  24,
+        "xPos":  80,
+        "yPos":  128,
+        "xyWrite":  0x00800050,
+        "roomWrite":  0x004100c0,
+        "stageWrite":  0x0000
+    },
+    "48": {
+        "comment":  "Reverse Outer Wall (Save Room)",
+        "stage":  0x21,
+        "room":  1,
+        "xPos":  232,
+        "yPos":  128,
+        "xyWrite":  0x008000e8,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0001
+    },
+    "49": {
+        "comment":  "Reverse Outer Wall (Telescope)",
+        "stage":  0x21,
+        "room":  3,
+        "xPos":  537,
+        "yPos":  128,
+        "xyWrite":  0x00800219,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x0001
+    },
+    "50": {
+        "comment":  "Forbidden Library (Book Case)",
+        "stage":  0x22,
+        "room":  1,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0002
+    },
+    "51": {
+        "comment":  "Forbidden Library (Shop)",
+        "stage":  0x22,
+        "room":  5,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410028,
+        "stageWrite":  0x0002
+    },
+    "52": {
+        "comment":  "Floating Catacombs (Galamoth)",
+        "stage":  0x23,
+        "room":  1,
+        "xPos":  24,
+        "yPos":  128,
+        "xyWrite":  0x00800018,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0003
+    },
+    "53": {
+        "comment":  "Floating Catacombs (Save Room)",
+        "stage":  0x23,
+        "room":  13,
+        "xPos":  246,
+        "yPos":  128,
+        "xyWrite":  0x008000f6,
+        "roomWrite":  0x00410068,
+        "stageWrite":  0x0003
+    },
+    "54": {
+        "comment":  "Deathwing's Lair (Entrance)",
+        "stage":  0x24,
+        "room":  1,
+        "xPos":  128,
+        "yPos":  128,
+        "xyWrite":  0x00800080,
+        "roomWrite":  0x00410008,
+        "stageWrite":  0x0004
+    },
+    "55": {
+        "comment":  "Deathwing's Lair (Alucard Mail)",
+        "stage":  0x24,
+        "room":  10,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x0004
+    },
+    "56": {
+        "comment":  "Deathwing's Lair (Heart Refresh)",
+        "stage":  0x24,
+        "room":  14,
+        "xPos":  256,
+        "yPos":  128,
+        "xyWrite":  0x00800100,
+        "roomWrite":  0x00410070,
+        "stageWrite":  0x0004
+    },
+    "57": {
+        "comment":  "Cave (Alucard Sword)",
+        "stage":  0x25,
+        "room":  11,
+        "xPos":  56,
+        "yPos":  128,
+        "xyWrite":  0x00800038,
+        "roomWrite":  0x00410058,
+        "stageWrite":  0x0005
+    },
+    "58comment": {
+        "stage":  0x26,
+        "room":  7,
+        "xPos":  204,
+        "yPos":  128,
+        "xyWrite":  0x008000cc,
+        "roomWrite":  0x00410038,
+        "stageWrite":  0x0006
+    },
+    "59": {
+        "comment":  "Reverse Entrance (Gate)",
+        "stage":  0x27,
+        "room":  0,
+        "xPos":  125,
+        "yPos":  512,
+        "xyWrite":  0x0100007d,
+        "roomWrite":  0x00410000,
+        "stageWrite":  0x0007
+    },
+    "60": {
+        "comment":  "Reverse Entrance (Caverns Shortcut)",
+        "stage":  0x27,
+        "room":  10,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x0007
+    },
+    "61": {
+        "comment":  "Reverse Entrance (Talisman)",
+        "stage":  0x27,
+        "room":  17,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410088,
+        "stageWrite":  0x0007
+    },
+    "62": {
+        "comment":  "Reverce Caverns (Peanuts)",
+        "stage":  0x29,
+        "room":  37,
+        "xPos":  18,
+        "yPos":  128,
+        "xyWrite":  0x00800012,
+        "roomWrite":  0x00410128,
+        "stageWrite":  0x0009
+    },
+    "63": {
+        "comment":  "Reverce Caverns (Imp Room)",
+        "stage":  0x29,
+        "room":  4,
+        "xPos":  224,
+        "yPos":  128,
+        "xyWrite":  0x008000e0,
+        "roomWrite":  0x00410020,
+        "stageWrite":  0x0009
+    },
+    "64": {
+        "comment":  "Reverce Caverns (Garnet)",
+        "stage":  0x29,
+        "room":  17,
+        "xPos":  228,
+        "yPos":  128,
+        "xyWrite":  0x008000e4,
+        "roomWrite":  0x00410088,
+        "stageWrite":  0x0009
+    },
+    "65": {
+        "comment":  "Reverse Colosseum (Gram)",
+        "stage":  0x2a,
+        "room":  10,
+        "xPos":  228,
+        "yPos":  128,
+        "xyWrite":  0x008000e4,
+        "roomWrite":  0x00410050,
+        "stageWrite":  0x000a
+    },
+    "66": {
+        "comment":  "Reverse Colosseum (Zircon)",
+        "stage":  0x2a,
+        "room":  12,
+        "xPos":  488,
+        "yPos":  128,
+        "xyWrite":  0x008001e8,
+        "roomWrite":  0x00410060,
+        "stageWrite":  0x000a
+    },
+    "67": {
+        "comment":  "Reverse Keep (High Potion)",
+        "stage":  0x2b,
+        "room":  3,
+        "xPos":  32,
+        "yPos":  256,
+        "xyWrite":  0x01000020,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x000b
+    },
+    "68": {
+        "comment":  "Reverse Keep (Lightning Mail)",
+        "stage":  0x2b,
+        "room":  8,
+        "xPos":  16,
+        "yPos":  128,
+        "xyWrite":  0x00800010,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x000b
+    },
+    "69": {
+        "comment":  "Necromancy Laboratory (Reverse Skill of Wolf)",
+        "stage":  0x2c,
+        "room":  8,
+        "xPos":  16,
+        "yPos":  128,
+        "xyWrite":  0x00800010,
+        "roomWrite":  0x00410040,
+        "stageWrite":  0x000c
+    },
+    "70": {
+        "comment":  "Necromancy Laboratory (Goddess Shield)",
+        "stage":  0x2c,
+        "room":  6,
+        "xPos":  248,
+        "yPos":  128,
+        "xyWrite":  0x008000f8,
+        "roomWrite":  0x00410030,
+        "stageWrite":  0x000c
+    },
+    "71": {
+        "comment":  "Necromancy Laboratory (Jewel Door Hall)",
+        "stage":  0x2c,
+        "room":  2,
+        "xPos":  504,
+        "yPos":  128,
+        "xyWrite":  0x008001f8,
+        "roomWrite":  0x00410010,
+        "stageWrite":  0x000c
+    },
+    "72": {
+        "comment":  "Reverse Clock Tower (Dragon Helm)",
+        "stage":  0x2d,
+        "room":  12,
+        "xPos":  32,
+        "yPos":  128,
+        "xyWrite":  0x00800020,
+        "roomWrite":  0x00410060,
+        "stageWrite":  0x000d
+    },
+    "73": {
+        "comment":  "Reverse Clock Tower (Maze Room)",
+        "stage":  0x2d,
+        "room":  3,
+        "xPos":  1728,
+        "yPos":  128,
+        "xyWrite":  0x008006c0,
+        "roomWrite":  0x00410018,
+        "stageWrite":  0x000d
+    }
+}
+
+music = {
+    "LOST_PAINTING": 0x01,  # Lost Painting
+    "CURSE_ZONE": 0x03,  # Curse Zone
+    "REQUIEM_FOR_THE_GODS": 0x05,  # Requiem for the Gods
+    "RAINBOW_CEMETARY": 0x07,  # Rainbow Cemetary
+    "WOOD_CARVING_PARTITA": 0x09,  # Wood Carving Partita
+    "CRYSTAL_TEARDROPS": 0x0b,  # Crystal Teardrops
+    "MARBLE_GALLERY": 0x0d,  # Marble Gallery
+    "DRACULAS_CASTLE": 0x0f,  # Dracula's Castle
+    "THE_TRAGIC_PRINCE": 0x11,  # The Tragic Prince
+    "TOWER_OF_MIST": 0x13,  # Tower of Mist
+    "DOOR_OF_HOLY_SPIRITS": 0x15,  # Door of Holy Spirits
+    "DANCE_OF_PALES": 0x17,  # Dance of Pales
+    "ABANDONED_PIT": 0x19,  # Abandoned Pit
+    "HEAVENLY_DOORWAY": 0x1b,  # Heavenly Doorway
+    "FESTIVAL_OF_SERVANTS": 0x1d,  # Festival of Servants
+    "WANDERING_GHOSTS": 0x23,  # Wandering Ghosts
+    "THE_DOOR_TO_THE_ABYSS": 0x25,  # The Door to the Abyss
+    "DANCE_OF_GOLD": 0x2e,  # Dance of Gold
+    "ENCHANTED_BANQUET": 0x30,  # Enchanted Banquet
+    "DEATH_BALLAD": 0x34,  # Death Ballad
+    "FINAL_TOCCATA": 0x38,  # Final Tocatta
+    "NOCTURNE": 0x3f  # Nocturne
+}
+
+music_by_area = {
+    "ARE": [0x00b0188, 0x6126570],
+    "CAT": [0x00b0054, 0x609505c],
+    "CEN": [0x00b0130],
+    "CHI": [0x00b00ac, 0x66cc898],
+    "DAI": [0x00b00d8],
+    "DRE": [0x5b074f4],
+    "LIB": [0x00b0028, 0x00b036c, 0x47e5ec4, 0x47e6060],
+    "LIB_BOSS": [0x47e5e08],
+    "NO0": [0x00affd0],
+    "NO1": [0x00afffc],
+    "NO2": [0x00b0080, 0x5fea9dc],
+    "NO3": [0x00b0104, 0x00b0c2c, 0x4ba6cb0, 0x4bb0064],
+    "NO4": [0x00b015c, 0x61d1fa8, 0x61d1fec, 0x61d2188],
+    "NZ0": [0x00b01e0, 0x54ecb58, 0x54ecbd4],
+    "NZ0_BOSS": [0x54eca88],
+    "NZ1": [0x00b020c, 0x55a2f90, 0x55a3008],
+    "NZ1_BOSS": [0x55a2ed0],
+    "TOP": [0x00b01b4],
+    "RARE": [0x00b0838, 0x6487b44, 0x6487bec],
+    "RCAT": [0x00b0704, 0x6a7c4f0, 0x6a7c58c],
+    "RCEN": [0x00b07e0],
+    "RCEN_BOSS": [0x56dc624],
+    "RCHI": [0x00b075c, 0x6644d10],
+    "RDAI": [0x00b0788, 0x6757ad8, 0x6757b74],
+    "RLIB": [0x00b06d8],
+    "RNO0": [0x00b0680],
+    "RNO1": [0x00b06ac, 0x67ec31c, 0x67ec3b8],
+    "RNO2": [0x00b0730],
+    "RNO3": [0x00b07b4],
+    "RNO4": [0x00b080c],
+    "RNZ0": [0x00b0890, 0x65a8960, 0x65a89f0],
+    "RNZ1": [0x00b08bc, 0x59ee534, 0x59ee5ac],
+    "RNZ1_BOSS": [0x59ee490],
+    "RTOP": [0x00b0864],
+    "BO0": [0x5fddd24, 0x5fddd80, 0x5fddda0, 0x5fdde14],
+    "BO1": [0x6094500, 0x6094534],
+    "BO2": [0x6129480],
+    "BO3": [0x61d20f4],
+    "BO5": [0x632e8c8],
+    "RBO1": [0x65a88e8, 0x65a8908],
+    "RBO2": [0x6644bc4],
+    "RBO3": [0x6757a78],
+    "RBO4": [0x67ec2bc],
+    "RBO5": [0x689e4f0],
+    "RBO7": [0x69e8318],
+    "RBO8": [0x6a7c490],
+}
+
+faerie_scroll_force_addresses = [
+    0x04403938,
+    0x044d4948,
+    0x045702c0,
+    0x0460bcb8,
+    0x046c70ec,
+    0x047eadd4,
+    0x04947e2c,
+    0x04a1da54,
+    0x04ae1d98,
+    0x04bb25e0,
+    0x04c86ae4,
+    0x04d367a4,
+    0x04dc4068,
+    0x04e6e350,
+    0x04f0ab84,
+    0x04fc4c08,
+    0x050800a0,
+    0x051373c4,
+    0x051e8da4,
+    0x052c0628,
+    0x0537889c,
+    0x05436b40,
+    0x054f34d8,
+    0x055a6164,
+    0x05643614,
+    0x056e3670,
+    0x0577dcb4,
+    0x05807b68,
+    0x0588d50c,
+    0x05936448,
+    0x059ef674,
+    0x05a7a89c,
+    0x05b0d6c4,
+    0x05fef940,
+    0x06099584,
+    0x0612aac4,
+    0x061d2f48,
+    0x06286480,
+    0x06332188,
+    0x063dae48,
+    0x0648f038,
+    0x06518314,
+    0x065a9958,
+    0x06648254,
+    0x066cdacc,
+    0x06758d7c,
+    0x067ed580,
+    0x0689f884,
+    0x06956f20,
+    0x069eb4c8,
+    0x06a7da5c,
+    ]
+
 RELIC_NAMES = ["Soul of bat", "Fire of bat", "Echo of bat", "Force of echo", "Soul of wolf", "Power of wolf",
                "Skill of wolf", "Form of mist", "Power of mist", "Gas cloud", "Cube of zoe", "Spirit orb",
                "Gravity boots", "Leap stone", "Holy symbol", "Faerie scroll", "Jewel of open", "Merman statue",
