@@ -76,10 +76,10 @@ class EnemyScroll(Toggle):
 
 
 class Difficult(Choice):
-    """easy: 50% less monster HP and attack, 50% more XP and drop chance increased
+    """easy: 50% less monster HP, attack and defense and drop chance increased
     normal: All vanilla stats
-    hard: 25% more monster HP and attack, 25% less XP
-    very_hard: 50% more monster HP and attack, 50% less XP"""
+    hard: 50% more monster HP, attack and defense
+    very_hard: 100% more monster HP, attack, and defense"""
     display_name = "Difficult"
     option_easy = 0
     option_normal = 1
@@ -88,39 +88,26 @@ class Difficult(Choice):
     default = 1
 
 
-class XpModifier(Range):
-    """Modifier for monster XP, override difficult preset
+class EnemyModifier(Range):
+    """Modifier for monster HP, attack and defense, override difficult preset
     Any number above 100 increase the attribute and bellow decrease"""
-    display_name = "XP modifier"
-    range_start = 0
-    range_end = 500
-    default = 0
-
-
-class AtkModifier(Range):
-    """Modifier for monster attack, override difficult preset
-    Any number above 100 increase the attribute and bellow decrease"""
-    display_name = "Attack modifier"
-    range_start = 0
-    range_end = 500
-    default = 0
-
-
-class HPModifier(Range):
-    """Modifier for monster HP, override difficult preset
-    Any number above 100 increase the attribute and bellow decrease"""
-    display_name = "HP modifier"
-    range_start = 0
-    range_end = 500
-    default = 0
+    display_name = "Enemy modifier"
+    range_start = 24
+    range_end = 200
+    default = 24
 
 
 class DropModifier(Choice):
-    """Modifier for monster drop, override difficult preset"""
+    """Modifier for monster drop. Override difficult preset
+    normal: Drop chance is not modified
+    increase: increase the odds of a drop
+    abundant: increase further odds of a drop
+    guaranteed: guarantees drops for every enemy that has one. Ring of arcana makes them drop their rare item instead"""
     display_name = "Drop modifier"
     option_normal = 0
     option_increased = 1
     option_abundant = 2
+    option_guaranteed = 3
     default = 0
 
 
@@ -132,6 +119,141 @@ class RandomStartGear(Toggle):
 class DeathLink(Toggle):
     """When you die, everyone who enabled death link dies. Of course, the reverse is true too."""
     display_name = "Death link"
+
+
+class RemovePrologue(Toggle):
+    """Remove prologue fight"""
+    display_name = "No prologue"
+
+
+class MapColor(Choice):
+    """Change map colors"""
+    display_name = "Map colors"
+    option_default = 0
+    option_dark_blue = 1
+    option_crimson = 2
+    option_brown = 3
+    option_dark_green = 4
+    option_gray = 5
+    option_purple = 6
+    option_pink = 7
+    option_black = 8
+    option_invisible = 9
+    default = 0
+
+
+class AlucardPalette(Choice):
+    """Change Alucard palette colors"""
+    display_name = "Alucard palette"
+    option_default = 0
+    option_bloody_tears = 1
+    option_blue_danube = 2
+    option_swamp_thing = 3
+    option_white_knight = 4
+    option_royal_purple = 5
+    option_pink_passion = 6
+    option_shadow_prince = 7
+    default = 0
+
+
+class AlucardLiner(Choice):
+    """Change Alucard liner colors"""
+    display_name = "Alucard liner"
+    option_gold_trim = 0
+    option_bronze_trim = 1
+    option_silver_trim = 2
+    option_onyx_trim = 3
+    option_coral_trim = 4
+    default = 0
+
+
+class MagicVessels(Toggle):
+    """Replace heart max up with magic max up"""
+    display_name = "Magic vessels"
+
+
+class AntiFreeze(Toggle):
+    """Remove screen freezes on level-up, relic and vessels acquisition"""
+    display_name = "Anti freeze"
+
+
+class MyPurse(Toggle):
+    """Prevent Death from stealing your gear"""
+    display_name = "That's my purse"
+
+
+class FastWarp(Toggle):
+    """Quickens warp animation when using teleporters"""
+    display_name = "Fast warp"
+
+
+class UnlockedMode(Toggle):
+    """Opens all five shorcuts in first castle and one in second castle
+    Might break logic"""
+    display_name = "Unlocked mode"
+
+
+class RelicSurprise(Toggle):
+    """All relics are hidden behind the same sprite and palette.
+    The player cannot tell what the relic is until the collect it"""
+    display_name = "Relic surprise!"
+
+
+class EnemyStats(Toggle):
+    """Enemy stats are randomized ranging from 25% to 200% of their original value and their attack and defense types
+    are randomized to include random elements. Modification options WILL OVERRIDE THIS OPTION"""
+    display_name = "Enemy stats"
+
+
+class RandomShopStock(Choice):
+    """Randomize items sold by Librarian
+    random: Any item can appear at shop
+    random_lib: Any item can appear at shop enforcing a Library card on sale
+    random_no_prog: No progression item can appear at shop
+    random_no_prog_lib: No progression item can appear at shop enforcing a Library card on sale"""
+    display_name = "Randomize shop stock"
+    option_off = 0
+    option_on = 1
+    option_on_lib = 2
+    option_on_no_prog = 3
+    option_on_no_prog_lib = 4
+    default = 0
+
+
+class ShopPrices(Toggle):
+    """Randomize shop prices between 50% to 150%. OVERRIDE difficult preset"""
+    display_name = "Shop prices"
+
+
+class StartingZone(Choice):
+    """Start in the entrance as usual but after the first Warg, you are teleported to a random zone to start the
+    rest of your run. (Could break logic)
+    vanilla: Normal entrance
+    normal_castle: Your random room will be on the first castle
+    reverse_castle: Your random room will be on the reverse castle
+    any_castle: Your random room could be anywhere"""
+    option_vanilla = 0
+    option_normal_castle = 1
+    option_reverse_castle = 2
+    option_any_castle = 3
+    default = 0
+    display_name = "Starting zone"
+
+
+class ReverseLibraryCard(Toggle):
+    """Adds a new function to library cards. Hold down while using them to take Alucard to the second castle library
+    after Richter is saved"""
+    display_name = "Reverse library card"
+
+
+class RandomizeMusic(Toggle):
+    """Randomize the game music"""
+    display_name = "Randomize music"
+
+
+class SkipClockTowerPuzzle(Toggle):
+    """Disable rotating gears clock tower puzzle. Hitting any gear once opens the secret door"""
+    display_name = "Clock tower puzzle"
 
 
 @dataclass
@@ -148,21 +270,38 @@ class SOTNOptions(PerGameCommonOptions):
     enemysanity: Enemysanity
     enemy_scroll: EnemyScroll
     difficult: Difficult
-    xp_mod: XpModifier
-    atk_mod: AtkModifier
-    hp_mod: HPModifier
+    enemy_mod: EnemyModifier
     drop_mod: DropModifier
     rng_start_gear: RandomStartGear
     death_link: DeathLink
+    remove_prologue: RemovePrologue
+    map_color: MapColor
+    alucard_palette: AlucardPalette
+    alucard_liner: AlucardLiner
+    magic_vessels: MagicVessels
+    anti_freeze: AntiFreeze
+    my_purse: MyPurse
+    fast_warp: FastWarp
+    unlocked_mode: UnlockedMode
+    relic_suprise: RelicSurprise
+    enemy_stats: EnemyStats
+    random_shop: RandomShopStock
+    shop_prices: ShopPrices
+    starting_zone: StartingZone
+    reverse_library: ReverseLibraryCard
+    random_music: RandomizeMusic
+    skip_nz1: SkipClockTowerPuzzle
 
 
 sotn_option_groups = [
     OptionGroup("gameplay tweaks", [
-        OpenedNO4NO3, OpenedDAIARE, Extension, RandomizeNonLocations, Enemysanity, EnemyScroll, Difficult, XpModifier,
-        AtkModifier, HPModifier, DropModifier, RandomStartGear, DeathLink
+        OpenedNO4NO3, OpenedDAIARE, Extension, RandomizeNonLocations, Enemysanity, EnemyScroll, Difficult,
+        EnemyModifier, DropModifier, RandomStartGear, DeathLink, RandomShopStock
     ]),
     OptionGroup("QOL", [
-        InfiniteWing, ExtraPool, BossLocations
+        InfiniteWing, ExtraPool, BossLocations, RemovePrologue, MapColor, AlucardPalette, AlucardLiner, MagicVessels,
+        AntiFreeze, MyPurse, FastWarp, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices, StartingZone,
+        ReverseLibraryCard, RandomizeMusic, SkipClockTowerPuzzle
     ])
 ]
 
