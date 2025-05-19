@@ -16,7 +16,9 @@ from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 # TODO:
 #  Visual glitches on Richter dialog
 #  Progression items https://discord.com/channels/731205301247803413/1108439196156317818/1359352832322572290
-#  Relic on platinum mail TOP too low
+#  Death link stuck at death
+#  Find a way to prevent using wrong version yaml on generate
+
 
 # Ideas:
 # Lock red doors for progression
@@ -134,6 +136,19 @@ class SotNClient(BizHawkClient):
                                 }
                             ]
                         )
+                        # Check for softlock
+                        if (self.cur_zone and self.cur_zone["name"] == "Underground Caverns" and
+                                cur_zone["name"] == "Abandoned Mine"):
+                            can_leave = await self.can_escape(ctx)
+                            if not can_leave:
+                                await self.grant_item(items["Library card"], ctx)
+                                self.message_queue.append(f"Granted a Library card to escape")
+                        if (self.cur_zone and self.cur_zone["name"] == "Marble Gallery" and
+                                cur_zone["name"] == "Center Cube"):
+                            can_leave = await self.can_escape(ctx)
+                            if not can_leave:
+                                await self.grant_item(items["Library card"], ctx)
+                                self.message_queue.append(f"Granted a Library card to escape")
                         # Did we leave Long Library?
                         if self.last_zone and self.last_zone["name"] == "Long Library":
                             self.jewel_item_qty = -1
@@ -388,8 +403,9 @@ class SotNClient(BizHawkClient):
                                             self.checked_locations.append(388)
                                             dopp10_item = await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd34, 2, "MainRAM")])
                                             dopp10_item = int.from_bytes(dopp10_item[0])
-                                            await self.grant_item(id_to_item[dopp10_item], ctx)
-                                            self.message_queue.append(f"Granted: {item_id_to_name[dopp10_item]}")
+                                            if dopp10_item != 0xffff:
+                                                await self.grant_item(id_to_item[dopp10_item], ctx)
+                                                self.message_queue.append(f"Granted: {item_id_to_name[dopp10_item]}")
                                             # Check Dopp10 enemysanity?
                                             if len(self.enemysanity_items):
                                                 self.checked_locations.append(
@@ -466,10 +482,12 @@ class SotNClient(BizHawkClient):
                                         # Check if a relic have a copy somewhere
                                         if enemy_loot in RELIC_NAMES:
                                             relic_id = items[enemy_loot]["id"] - 300
-                                            if self.relic_placement[relic_id] != 0xfff:
-                                                self.checked_locations.append(self.relic_placement[relic_id])
-                                            if len(self.copy_placement) and self.copy_placement[relic_id] != 0xfff:
-                                                self.checked_locations.append(self.copy_placement[relic_id])
+                                            # TODO This must be tested
+                                            relic_index = relic_id if relic_id <= 22 else relic_id - 2
+                                            if self.relic_placement[relic_index] != 0xfff:
+                                                self.checked_locations.append(self.relic_placement[relic_index])
+                                            if len(self.copy_placement) and self.copy_placement[relic_index] != 0xfff:
+                                                self.checked_locations.append(self.copy_placement[relic_index])
                             else:
                                 if loot_flag & (1 << loc["index"]):
                                     self.checked_locations.append(loc["ap_id"])
@@ -1035,8 +1053,8 @@ class SotNClient(BizHawkClient):
         read_list = list(bytes(read_value[0]))
 
         seed_list = read_list[0:10]
-        pnum_list = read_list[10:11]
-        sanity_list = read_list[11:12]
+        pnum_list = read_list[10:12]
+        sanity_list = read_list[12:13]
         first_list = read_list[24:54]
         second_list = read_list[56:86]
         third_list = read_list[88:]
@@ -1048,7 +1066,8 @@ class SotNClient(BizHawkClient):
             seed += str(b >> 4)
             seed += str(b & 0x0f)
 
-        player = f"P{int(pnum_list[0])}"
+        player_num = int.from_bytes(pnum_list)
+        player = f"P{player_num}"
 
         last_byte = 0x00
         for b in first_list:
@@ -1086,8 +1105,33 @@ class SotNClient(BizHawkClient):
         ctx.username = utf_name
         ctx.auth = utf_name
 
-        logger.info(f"Running ROM seed: {seed} for player: {utf_name}")
+        logger.info(f"Running ROM seed: {seed} for player {player_num}: {utf_name}")
         logger.info("Have fun!")
+
+    async def can_escape(self, ctx: "BizHawkClientContext") -> bool:
+        soul_bat = await self.read_int(ctx, 0x097964, 1, "MainRAM")
+
+        if soul_bat != 0:
+            return True
+
+        # Form + Power of mist
+        form = await self.read_int(ctx, 0x09796b, 1, "MainRAM")
+        power = await self.read_int(ctx, 0x09796c, 1, "MainRAM")
+        if form != 0 and power != 0:
+            return True
+
+        # Gravity + Leap
+        gravity = await self.read_int(ctx, 0x097970, 1, "MainRAM")
+        leap = await self.read_int(ctx, 0x097971, 1, "MainRAM")
+        if gravity != 0 and leap != 0:
+            return True
+
+        # Have library card?
+        library = await self.read_int(ctx, 0x097a30, 1, "MainRAM")
+        if library > 0:
+            return True
+
+        return False
 
     @staticmethod
     async def play_sfx(ctx: "BizHawkClientContext", snd_id: int):
