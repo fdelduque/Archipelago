@@ -4,7 +4,6 @@ import math
 import sys
 
 import logging
-from sys import platform
 from typing import TYPE_CHECKING, List
 from Utils import home_path, open_filename, messagebox
 from settings import get_settings
@@ -12,10 +11,12 @@ from worlds.AutoWorld import World
 from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes, APPatchExtension
 from BaseClasses import Item, ItemClassification
 from .ErrorRecalc import ErrorRecalculator
-from .Items import tile_id_offset, relic_id_to_name, items, weapon1, shield, armor, helmet, cloak, accessory
+from .Items import tile_id_offset, relic_id_to_name, items, weapon1, shield, armor, helmet, cloak, accessory, id_to_item
 from .Locations import locations
-from .Enemies import enemy_dict
-from .data.Constants import RELIC_NAMES, SLOT, slots, equip_id_offset, equip_inv_id_offset, CURRENT_VERSION
+from .Enemies import enemy_dict, enemy_stats_list, enemy_atk_type_list, enemy_weak_type_list
+from .data.Constants import (RELIC_NAMES, SLOT, slots, equip_id_offset, equip_inv_id_offset, CURRENT_VERSION,
+                             faerie_scroll_force_addresses, shop_item_data, start_room_data, music, music_by_area)
+
 from .data.Zones import zones, ZONE
 import hashlib
 import os
@@ -763,7 +764,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         seed_number = world.multiworld.seed_name[1:]
     else:
         seed_number = world.multiworld.seed_name
-    options_dict["seed"] = int(seed_number)
+    options_dict["seed"] = seed_number
     options_dict["player"] = patch.player
     options_dict["player_name"] = patch.player_name
     randomize_items = options_dict["randomize_items"]
@@ -789,7 +790,10 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
 
         # Save Doppelganger10 item
         if loc.name == "Outer Wall - Doppleganger 10 item":
-            dopp10_item = items[loc.item.name]
+            if loc.item.player == world.player:
+                dopp10_item = items[loc.item.name]
+            else:
+                dopp10_item = 0xffff
 
         if loc.item and loc.item.player == world.player:
             if loc.item.name == "Victory":
@@ -1105,11 +1109,8 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                 patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", relic_byte))
                 patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", relic_byte))
                 start_address += 1
-        # WRITE DOPP 10 ITEM and Terminate
-        item_id = dopp10_item["id"]
-        patch.write_token(APTokenTypes.WRITE, start_address, item_id.to_bytes(2))
-        patch.write_token(APTokenTypes.WRITE, start_address - offset, item_id.to_bytes(2))
-        start_address += 2
+
+        # Terminate
         patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
         patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
 
@@ -1134,6 +1135,13 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
         patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
         # Richter Defeat Dracula   23 bytes left
+
+    # WRITE DOPP 10 ITEM on the very end of Defeat Olrox and terminate
+    item_id = dopp10_item
+    patch.write_token(APTokenTypes.WRITE, 0x438d6c4, item_id.to_bytes(2))
+    patch.write_token(APTokenTypes.WRITE, 0x438d6c4 - 0x4298798, item_id.to_bytes(2))
+    patch.write_token(APTokenTypes.WRITE, 0x438d6c6, (0xff00).to_bytes(2))
+    patch.write_token(APTokenTypes.WRITE, 0x438d6c6 - 0x4298798, (0xff00).to_bytes(2))
 
     # Write enemysanity items in time-attack menu
     if len(enemysanity_items):
@@ -1354,29 +1362,38 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     if options_dict["death_link"]:
         sanity |= (1 << 7)
 
-    xp_mod, atk_mod, hp_mod, drop_mod = 0, 0, 0, 0
+    enemy_mod = 0
+    shop_price_min = -10
+    shop_price_max = -10
+    drop_mod = 0
+
     if options_dict["difficult"] != 1:
         if options_dict["difficult"] == 0:
-            xp_mod = 150
-            hp_mod, atk_mod = 50, 50
-            drop_mod = 1
+            enemy_mod = 50
+            shop_price_min = 50
+            shop_price_max = 75
+            drop_mod = 3
         elif options_dict["difficult"] == 2:
-            xp_mod = 75
-            hp_mod, atk_mod = 125, 125
+            enemy_mod = 150
+            shop_price_min = 100
+            shop_price_max = 125
         elif options_dict["difficult"] == 3:
-            drop_mod = 50
-            hp_mod, atk_mod = 150, 150
+            enemy_mod = 200
+            shop_price_min = 125
+            shop_price_max = 150
 
-    if options_dict["xp_mod"] != 0:
-        xp_mod = options_dict["xp_mod"]
+    if options_dict["enemy_mod"] >= 25:
+        enemy_mod = options_dict["enemy_mod"] / 100
+
+    if enemy_mod != 0 or options_dict["enemy_stats"]:
+        enemy_stat_rando(enemy_mod, options_dict["enemy_stats"], world, patch)
+
     if options_dict["drop_mod"] != 0:
         drop_mod = options_dict["drop_mod"]
-    if options_dict["hp_mod"] != 0:
-        hp_mod = options_dict["hp_mod"]
-    if options_dict["atk_mod"] != 0:
-        atk_mod = options_dict["atk_mod"]
 
-    modify_enemies(xp_mod, drop_mod, hp_mod, atk_mod, patch)
+    if drop_mod != 0:
+        modify_drop(options_dict["drop_mod"], patch)
+
     player_name = world.multiworld.get_player_name(world.player)
     player_num = world.player
 
@@ -1393,8 +1410,57 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     if options_dict["rng_start_gear"]:
         randomize_starting_equipment(world, patch)
 
-    #skip_prologue(patch)
+    if options_dict["remove_prologue"]:
+        no_prologue(patch)
+
+    map_colors_value = options_dict["map_color"]
+    if map_colors_value != 0:
+        map_color(map_colors_value, patch)
+
+    alucard_palette_value = options_dict["alucard_palette"]
+    if alucard_palette_value != 0:
+        alucard_palette(alucard_palette_value, patch)
+
+    alucard_liner(options_dict["alucard_liner"], patch)
+
+    if options_dict["magic_vessels"]:
+        magic_max(patch)
+
+    if options_dict["anti_freeze"]:
+        anti_freeze(patch)
+
+    if options_dict["my_purse"]:
+        my_purse(patch)
+
+    if options_dict["fast_warp"]:
+        fast_warp(patch)
+
+    if options_dict["unlocked_mode"]:
+        unlocked_patches(patch)
+
+    if options_dict["relic_suprise"]:
+        surprise_patches(patch)
+
+    if options_dict["shop_prices"]:
+        shop_price_min = 50
+        shop_price_max = 150
+
+    randomize_shop(shop_price_min, shop_price_max, options_dict["random_shop"], world, patch)
+
+    if options_dict["starting_zone"] != 0:
+        start_room_rando(options_dict["starting_zone"], world, patch)
+
+    if options_dict["reverse_library"]:
+        rlib_card(patch)
+
+    if options_dict["random_music"]:
+        randomize_music(world, patch)
+
+    if options_dict["skip_nz1"]:
+        disable_nz1_puzzle(patch)
+
     apply_acessibility_patches(patch)
+    rando_func_master(0, patch)
 
     options_dict["version"] = CURRENT_VERSION
 
@@ -1402,22 +1468,440 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     patch.write_file("token_data.bin", patch.get_token_binary())
 
 
-def modify_enemies(xp_mod: int, drop_mod: int, hp_mod: int, atk_mod: int, patch: SotnProcedurePatch):
-    for k, enemy in enemy_dict.items():
-        if k in ["Stone skull", "Slime", "Large slime", "Poltergeist", "Puppet sword", "Shield", "Spear", "Ball"]:
-            continue
+def disable_nz1_puzzle(patch: SotnProcedurePatch):
+    # Clock tower puzzle 180fd0 = 0f Change 1a8a64: and r3, r5 to 3403000f mov r3, 0x0f @ROM 0x055a0f4c
+    # Reverse clock tower puzzle 180f6c = 0f Change 1a8350: and r2, r3 to 3402000f mov r2, 0x0f @ ROM 0x059e928
+    patch.write_token(APTokenTypes.WRITE, 0x055a0f4c, (0x3403000f).to_bytes(4, "little"))
+    patch.write_token(APTokenTypes.WRITE, 0x059e9328, (0x3402000f).to_bytes(4, "little"))
 
-        if xp_mod != 0:
-            if "xp" in enemy:
-                if enemy["xp"] != 0:
-                    new_xp = int(enemy["xp"] * (xp_mod / 100))
-                    new_xp = new_xp if new_xp < 65535 else 65535
-                    if "xp_addresses" in enemy:
-                        for add in enemy["xp_addresses"]:
-                            patch.write_token(APTokenTypes.WRITE, add, new_xp.to_bytes(2, "little"))
-                    else:
-                        patch.write_token(APTokenTypes.WRITE, enemy["xp_address"], new_xp.to_bytes(2, "little"))
-        if drop_mod != 0:
+
+def randomize_music(world: "SotnWorld", patch: SotnProcedurePatch):
+    music_list = list(music_by_area.values())
+    song_src = list(music.values())
+
+    song_pool = song_src.copy()
+    while len(song_pool) < len(music_list):
+        song_pool.append(world.random.choice(song_src))
+
+    world.random.shuffle(song_pool)
+
+    for zone in music_list:
+        rand_song = song_pool.pop()
+        for addr in zone:
+            patch.write_token(APTokenTypes.WRITE, addr, struct.pack("<B", rand_song))
+
+
+def rlib_card(patch: SotnProcedurePatch):
+    # Patch the reverse library card function
+    offset = 0x12b534  # Hook to our new LBC function
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0c02622f).to_bytes(4, "little"))
+    # No "nop" instr needed as it's already a call
+
+    # Function to call when using library card. Thanks eldrich for some direction
+    offset = 0x3711a74
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x08026243).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset = 0x3711ac4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c028004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9045925d).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x38a500ff).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x30a50040).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10a00008).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c028007).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9042bbfb).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10400004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34180022).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x341988be).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x18000003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34180002).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34197c0e).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c02800f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa0581724).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3b180020).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa05832a4).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c02800a).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa4593c98).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0804390b).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x03e00008).to_bytes(4, "little"))
+    offset += 4
+
+
+def rando_func_master(opt_write: int, patch: SotnProcedurePatch) -> None:
+    offset = 0xF96D8
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0c038ba6).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+
+    offset = 0xF87B0
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C01800A).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xAC208850).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x27BDFFE0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C020026).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34422905).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040002).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x27A50010).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34060000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xAFBF0018).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0C006578).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xAFA20010).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3404000E).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C058009).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34A588B0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0C007020).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34060080).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0C007062).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34050000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34020000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8FBF0018).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x27BD0020).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x03E00008).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+
+    offset = 0x3711A68
+
+    patch.write_token(APTokenTypes.WRITE, offset, opt_write.to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x08026231).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x08026243).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x27BDFFE0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xAFBF0010).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0C03C182).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C048009).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x348488B0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8C860000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C058000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34A50000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00C53024).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10C00003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0C02625D).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8FBF000A).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x27BD0020).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x03E00008).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C028004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9045925D).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x38A500FF).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x30A50040).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10A00008).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C028007).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9042BBFB).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10400004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34180022).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x341988BE).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x18000003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34180002).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34197C0E).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C02800F).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xA0581724).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3B180020).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xA05832A4).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3C02800A).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xA4593C98).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0804390B).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x03E00008).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+
+
+def modify_drop(drop_mod: int, patch: SotnProcedurePatch):
+    if drop_mod == 3:
+        nop_line = 0x00000000
+        always_drop = 0x1800000D
+
+        # Patch drops to always be items
+        offset = 0x440413c  # Colosseum
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))  # Removes failures
+        offset += 0x1c
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))  # Removes second roll failures
+        offset += 0x10
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))  # Forces an item drop
+
+        offset = 0x44d514c  # Catacombs
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x460c4bc  # Abandoned Mine
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x46c78f0  # Royal Chapel
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x47eb5d8  # Long Library
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4948630  # Marble Gallery
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4a1e258  # Outer Wall
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4ae259c  # Olrox's Quarters
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4bb2de4  # Entrance(2nd)
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4c871c8  # Underground Caverns
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4d36fa8  # Floating Catacombs
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4dc486c  # Cave
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4e6ea24  # Anti-Chapel
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4f0b388  # Forbidden Library
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x4fc540c  # Black Marble Gallery
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x50808a4  # Reverse Outer Wall
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x5137bc8  # Death Wing's Lair
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x51e95a8  # Reverse Entrance
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x52c0e2c  # Reverse Caverns
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x5437344  # Entrance(1st)
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x54f3cdc  # Alchemy Laboratory
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x55a6968  # Clock Tower
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x5643ce8  # Castle Keep
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x577e4b8  # Reverse Colosseum
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x580836c  # Reverse Keep
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x5936c4c  # Necromancy Laboratory
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        offset = 0x59efe78  # Reverse Clock Tower
+        patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
+        offset += 0x2c
+        patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
+
+        # Alternate between Rare and Uncommon Drops based on Kill Count - MottZilla
+        offset = 0x119188  # PSX MainRam 800FF4C0h
+        patch.write_token(APTokenTypes.WRITE, offset, (0x3c068009).to_bytes(4, "little"))  # mov r6,80090000h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34c67bf4).to_bytes(4, "little"))  # or r6,7BF4h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x8cc20000).to_bytes(4, "little"))  # mov r2,[r6]
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x30420001).to_bytes(4, "little"))  # and r2,1h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x14400004).to_bytes(4, "little"))  # jnz r2,800FF4E8h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34020020).to_bytes(4, "little"))  # mov r2,20h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x0803fd7a).to_bytes(4, "little"))  # jmp 800FF5E8h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34020040).to_bytes(4, "little"))  # mov r2,40h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x0803fd7a).to_bytes(4, "little"))  # jmp 800FF5E8h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
+    else:
+        for k, enemy in enemy_dict.items():
+            if enemy in ["Stone skull", "Slime", "Large slime", "Poltergeist", "Puppet sword", "Shield", "Spear", "Ball"]:
+                continue
+
             if "drop_rate" in enemy:
                 try:
                     address = enemy["drop_addresses"][0] + 4
@@ -1431,43 +1915,545 @@ def modify_enemies(xp_mod: int, drop_mod: int, hp_mod: int, atk_mod: int, patch:
                     patch.write_token(APTokenTypes.WRITE, address, drop_common_new.to_bytes(2, "little"))
                 except IndexError:
                     pass
-        if hp_mod != 0:
-            if "hp_addresses" in enemy:
-                for i in range(2):
-                    hp = enemy["hp"][i]
-                    add = enemy["hp_addresses"][i]
-                    hp = hp if hp > 1 else 2
-                    hp_new = int(hp * (hp_mod / 100))
-                    hp_new = hp_new if hp_new < 65535 else 65535
-                    patch.write_token(APTokenTypes.WRITE, add, hp_new.to_bytes(2, "little"))
-            else:
-                hp_new = enemy["hp"]
-                hp_new = hp_new if hp_new != 1 else 2
-                hp_new = int(hp_new * (hp_mod / 100))
-                hp_new = hp_new if hp_new < 65535 else 65535
-                patch.write_token(APTokenTypes.WRITE, enemy["hp_address"], hp_new.to_bytes(2, "little"))
-        if atk_mod != 0:
-            if "attack_addresses" in enemy:
-                for i in range(2):
-                    atk = enemy["attack"][i]
-                    add = enemy["attack_addresses"][i]
-                    atk = atk if atk > 1 else 2
-                    atk_new = int(atk * (atk_mod / 100))
-                    atk_new = atk_new if atk_new < 65535 else 65535
-                    patch.write_token(APTokenTypes.WRITE, add, atk_new.to_bytes(2, "little"))
-            else:
-                atk_new = enemy["attack"]
-                atk_new = atk_new if atk_new != 1 else 2
-                atk_new = int(atk_new * (atk_mod / 100))
-                atk_new = atk_new if atk_new < 65535 else 65535
-                if k == "Galamoth":
-                    continue
-                    # TODO: Find galamoth attack address
-                patch.write_token(APTokenTypes.WRITE, enemy["attack_address"], atk_new.to_bytes(2, "little"))
 
 
-# Thanks eldri7ch for this
-def skip_prologue(patch: SotnProcedurePatch):
+def start_room_rando(castle_flag: int, world: "SotnWorld", patch: SotnProcedurePatch):
+    room_keys = list(start_room_data.keys())
+    rand_room_key = world.random.choice(room_keys)
+    rand_room = start_room_data[rand_room_key]
+
+    if castle_flag == 1:  # 1st castle only
+        while rand_room["stage"] >= 20:
+            rand_room = world.random.choice(start_room_data)
+    elif castle_flag == 2:  # 2nd castle only
+        while rand_room["stage"] <= 20:
+            rand_room = world.random.choice(start_room_data)
+
+    # Not sure if this prevents logic breaking for SOTN.IO
+    if rand_room["stage"] >= 0x20:
+        offset = 0xf0230
+        patch.write_token(APTokenTypes.WRITE, offset, (0x3C028009).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x8C4274A0).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x30420020).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x1040000E).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x3C028007).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x9042BBFB).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x14400009).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x3C028007).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x9042BCC0).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x14400004).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34020001).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x03E00008).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x0803F8EA).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+
+        # Hooks
+        offset = 0x12C7B0
+        patch.write_token(APTokenTypes.WRITE, offset, (0x6E6E).to_bytes(2, "little"))
+        offset = 0x12CB00
+        patch.write_token(APTokenTypes.WRITE, offset, (0x6E6E).to_bytes(2, "little"))
+        # Disable Richter Cutscene
+        offset = 0x5641220
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34020001).to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+
+        # Patch Zone with Hatch Entity (required for 2nd to work)
+        offset = 0x4BA934C
+        patch.write_token(APTokenTypes.WRITE, offset, (0x34040020).to_bytes(4, "little"))  # mov r4,20h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x3C058009).to_bytes(4, "little"))  # mov r5,80090000h
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0xACA474A0).to_bytes(4, "little"))  # mov [r5+74a0h],r4
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x0806E92B).to_bytes(4, "little"))  # jmp 801BA4ACh
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))  # nop
+        offset += 4
+
+    offset = 0x4b6ab0c
+    patch.write_token(APTokenTypes.WRITE, offset, (0x28042804).to_bytes(4, "little"))  # Setting up the CD room
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34000015).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x28052805).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0000ff64).to_bytes(4, "little"))
+
+    offset = 0x4b66a44
+    patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x04))
+    offset += 1
+    patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x4a))
+    offset += 1
+    patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+    offset += 1
+    patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x41))
+    offset += 1
+    patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x64))
+
+    offset = 0xae95c  # change the destination
+    new_write = rand_room["xyWrite"]  # Write X,Y Position
+    patch.write_token(APTokenTypes.WRITE, offset, new_write.to_bytes(4, "little"))
+    offset += 4
+
+    new_write = rand_room["roomWrite"]  # Write Rooms Used
+    patch.write_token(APTokenTypes.WRITE, offset, new_write.to_bytes(4, "little"))
+    offset += 4
+
+    new_write = rand_room["stageWrite"]  # Write destination stage Used
+    patch.write_token(APTokenTypes.WRITE, offset, new_write.to_bytes(4, "little"))
+    offset += 4
+
+    if new_write == 0x03 or new_write == 0x05:
+        offset = 0x45f55a2  # Solve soft lock if player starts near Room 0 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x42))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x03))
+
+        offset = 0x45f52a2  # Solve soft lock if player starts near Room 0 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x42))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x03))
+
+        offset = 0x45f5142  # Solve soft lock if player starts near Room 0 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x42))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x03))
+
+        offset = 0x45f4eec  # Solve soft lock if player starts near Room 0 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x42))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x03))
+
+        offset = 0x45f67bc  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x67))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x68))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+
+        offset = 0x45f65dc  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x23))
+
+        offset = 0x45f655a  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x68))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+
+        offset = 0x45f64dc  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x42))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x03))
+
+        offset = 0x45f644e  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x67))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x68))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x00))
+
+        offset = 0x45f6168  # Solve soft lock if player starts near Room 3 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0xda))
+        offset += 1
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", 0x01))
+
+        # Solve soft lock if player starts near Room 8 in Abandoned Mines
+        patch.write_token(APTokenTypes.WRITE, 0x45f8de2, (0x03430342).to_bytes(4, "little"))
+        patch.write_token(APTokenTypes.WRITE, 0x45f8a92, (0x0342).to_bytes(2, "little"))
+        patch.write_token(APTokenTypes.WRITE, 0x45f897c, (0x0343).to_bytes(2, "little"))
+        patch.write_token(APTokenTypes.WRITE, 0x45f879a, (0x03430342).to_bytes(4, "little"))
+
+
+def randomize_shop(min_value: int, max_value: int, randomize_items: int, world: "SotnWorld",
+                   patch: SotnProcedurePatch) -> None:
+    new_min = 50
+    new_max = 150
+    new_shop_prices = []
+    new_shop_stock = []
+    new_shop_value = []
+    forbid_items = [169, 195, 217, 226]
+
+    if randomize_items >= 3:
+        forbid_items = [169, 183, 195, 203, 217, 226, 241, 242]
+
+    if min_value > 0:
+        new_min = min_value
+    if max_value > 0:
+        new_max = max_value
+
+    for item_id, item in shop_item_data.items():
+        if min_value > 0 or max_value > 0:
+            new_price = world.random.randint(new_min, new_max)
+            new_shop_prices.append(new_price)
+
+        if item_id == 1 and (randomize_items == 2 or randomize_items == 4):
+            new_shop_stock.append(166)
+            new_shop_value.append(0x00)
+        elif randomize_items != 0:
+            new_item = 0
+            type_value = 0x00
+            while new_item == 0 or new_item in new_shop_stock:
+                new_item = world.random.choice([i for i in range(1, 259) if i not in forbid_items])
+            item = id_to_item[new_item]
+            if item["type"] == "HELMET":
+                type_value = 0x01
+            elif item["type"] == "ARMOR":
+                type_value = 0x02
+            elif item["type"] == "CLOAK":
+                type_value = 0x03
+            elif item["type"] == "ACCESSORY":
+                type_value = 0x04
+            new_shop_stock.append(new_item)
+            new_shop_value.append(type_value)
+
+    world.random.shuffle(new_shop_prices)
+
+    for item_id, item in shop_item_data.items():
+        item_price = item["itemPriceD"]
+        item_address = item["priceAddress"]
+        if min_value > 0 or max_value > 0:
+            new_price = new_shop_prices.pop()
+            rng_price = int(item_price * (new_price / 100))
+            patch.write_token(APTokenTypes.WRITE, item_address, rng_price.to_bytes(4, "little"))
+
+        if randomize_items != 0:
+            new_item = new_shop_stock.pop(0)
+            type_value = new_shop_value.pop(0)
+            offset = -0xa9
+            if type_value == 0x00:
+                offset = 0x00
+            patch.write_token(APTokenTypes.WRITE, item_address - 4, struct.pack("<B", type_value))
+            patch.write_token(APTokenTypes.WRITE, item_address - 2, (new_item + offset).to_bytes(2, "little"))
+
+
+def enemy_stat_rando(new_mod: float, enemy_stat: bool, world: "SotnWorld", patch: SotnProcedurePatch):
+    for enemy in enemy_stats_list:
+        stat_hp = enemy["hpValue"]
+        stat_atk = enemy["atkValue"]
+        stat_def = enemy["defValue"]
+
+        if new_mod != 0:
+            new_hp = int(round(new_mod * stat_hp))
+            new_atk = int(round(new_mod * stat_atk))
+            new_def = int(round(new_mod * stat_def))
+        else:
+            new_hp = enemy_num_stat_rand(world, stat_hp)
+            new_atk = enemy_num_stat_rand(world, stat_atk)
+            new_def = enemy_num_stat_rand(world, stat_def)
+
+        patch.write_token(APTokenTypes.WRITE, enemy["hpOffset"], new_hp.to_bytes(2, "little"))
+        patch.write_token(APTokenTypes.WRITE, enemy["atkOffset"], new_atk.to_bytes(2, "little"))
+        patch.write_token(APTokenTypes.WRITE, enemy["defOffset"], new_def.to_bytes(2, "little"))
+
+        if enemy["id"] == 379:
+            stat_atk = 70
+            new_atk = enemy_num_stat_rand(world, stat_atk)
+            patch.write_token(APTokenTypes.WRITE, 0x0b9c0e, new_atk.to_bytes(2, "little"))
+            stat_def = 20
+            new_def = enemy_num_stat_rand(world, stat_def)
+            patch.write_token(APTokenTypes.WRITE, 0x0b9c12, new_def.to_bytes(2, "little"))
+
+        if not enemy_stat:
+            continue
+
+        new_atk_type = world.random.choice(enemy_atk_type_list)
+        patch.write_token(APTokenTypes.WRITE, enemy["atkTypeOffset"], new_atk_type.to_bytes(2, "little"))
+        new_weak_type = world.random.choice(enemy_weak_type_list)
+        patch.write_token(APTokenTypes.WRITE, enemy["weakOffset"], new_weak_type.to_bytes(2, "little"))
+        new_resist_type = enemy_resist_type_stat_rand(world)
+        patch.write_token(APTokenTypes.WRITE, enemy["resistOffset"], new_resist_type.to_bytes(2, "little"))
+
+        if enemy["id"] == 379:
+            patch.write_token(APTokenTypes.WRITE, 0x0b9c10, new_atk_type.to_bytes(2, "little"))
+            patch.write_token(APTokenTypes.WRITE, 0x0b9c16, new_weak_type.to_bytes(2, "little"))
+            patch.write_token(APTokenTypes.WRITE, 0x0b9c18, new_resist_type.to_bytes(2, "little"))
+
+        res_index = (world.random.uniform(0, 1) * 10) % 2 == 0
+        if res_index:
+            offset = enemy["guardOffset"]
+            new_immune_type = enemy_resist_type_stat_rand(world)
+            patch.write_token(APTokenTypes.WRITE, offset, new_immune_type.to_bytes(2, "little"))
+            if enemy["id"] == 379:
+                patch.write_token(APTokenTypes.WRITE, 0x0b9c1a, new_immune_type.to_bytes(2, "little"))
+        else:
+            offset = enemy["absorbOffset"]
+            new_immune_type = enemy_resist_type_stat_rand(world)
+            patch.write_token(APTokenTypes.WRITE, offset, new_immune_type.to_bytes(2, "little"))
+            if enemy["id"] == 379:
+                patch.write_token(APTokenTypes.WRITE, 0x0b9c1c, new_immune_type.to_bytes(2, "little"))
+
+        disclosure_card = 'f0'
+        new_disclosure = hex_value_to_damage_string(new_atk_type)
+        if new_disclosure.startswith('05'):
+            new_disclosure = replace_text_at_index(new_disclosure, '00', 0)
+            disclosure_card += '05'
+        elif new_disclosure.startswith('3f'):
+            new_disclosure = replace_text_at_index(new_disclosure, '00', 0)
+            disclosure_card += '3f'
+        elif new_atk > stat_atk:
+            disclosure_card += 'e2'
+        else:
+            disclosure_card += 'e6'
+        disclosure_card += new_disclosure + 'f1'
+        if new_def > stat_def:
+            disclosure_card += 'e2'
+        else:
+            disclosure_card += 'e6'
+
+        new_disclosure = hex_value_to_defence_string(new_weak_type)[-2:]
+        disclosure_card += new_disclosure
+        new_disclosure = hex_value_to_defence_string(new_resist_type)[-2:]
+        disclosure_card += new_disclosure
+        if res_index:
+            disclosure_card += 'f7'
+            new_disclosure = hex_value_to_defence_string(new_immune_type)[-2:]
+            disclosure_card += new_disclosure
+        else:
+            disclosure_card += 'f6'
+            new_disclosure = hex_value_to_defence_string(new_immune_type)[-2:]
+            disclosure_card += new_disclosure
+        disclosure_card += 'ff'
+        len_disclosure = len(disclosure_card)
+        for _ in range(len_disclosure, 24):
+            disclosure_card += '00'
+        offset = enemy["newNameText"]
+        for i in range(0, len(disclosure_card), 2):
+            two_chars_str = '0x' + disclosure_card[i:i+2]
+            two_chars = int(two_chars_str, 16)
+            patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", two_chars))
+            offset += 1
+        patch.write_token(APTokenTypes.WRITE, enemy["nameOffset"], enemy["newNameReference"].to_bytes(4, "little"))
+
+    offset = 0x0f6138
+    normal_names = "0024524143554C41FF0027414C414D4F5448FF00F700214C4CFF00274F4F44002C55434BFF00"
+
+    for i in range(0, len(normal_names), 2):
+        two_chars_str = '0x' + normal_names[i:i+2]
+        two_chars = int(two_chars_str, 16)
+        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", two_chars))
+        offset += 1
+
+    offset = 0x0b9ca8
+    patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cf4).to_bytes(4, "little"))
+
+    offset = 0x0b6220
+    patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cfb).to_bytes(4, "little"))
+
+    for address in faerie_scroll_force_addresses:
+        force_on = 0x34020003
+        force_nop = 0x00000000
+        offset = address
+
+        patch.write_token(APTokenTypes.WRITE, offset, force_on.to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, force_nop.to_bytes(4, "little"))
+
+
+def replace_text_at_index(old_str: str, new_str: str, index: int) -> str:
+    return old_str[0:index] + new_str + old_str[index + len(new_str):]
+
+
+def find_required_numbers(total: int, numbers: list) -> list:
+    # This returns the numbers that compose a value. For example, if the total is 12 and the possible
+    # numbers are 1, 2, 4 and 8, it will return [8, 4]
+    # Sort the numbers in descending order
+    numbers.sort(reverse=True)
+
+    # Initialize an array to store the result
+    result = []
+
+    # Iterate through the sorted numbers
+    for number in numbers:
+        if total >= number:
+            # If the current number can be subtracted from the total, add it to the result
+            result.append(number)
+            total -= number
+
+    # Return the list of required numbers
+    return result
+
+
+def get_stat_type(type_obj: dict, value: int) -> str:
+    values_for_damage = find_required_numbers(value, list(type_obj.keys()))
+    values_for_damage.sort()  # Sort them ascending
+    value_type = ""
+    for value in values_for_damage:
+        value_type += type_obj[value]
+
+    return value_type
+
+
+def hex_value_to_damage_string(hex_value: int) -> str:
+    # Hit types can't be combined
+    hit_types = {
+        0: "",  # No hit box
+        1: "",  # Hit 16%
+        2: "",  # Hit
+        4: "",  # Cut
+        5: "",  # Cut 16%
+        6: "",  # Cut weak
+        8: "30"  # Poison
+    }
+
+    # Hit effects can't be combined
+    hit_effects = {
+        0: "",  # No hit box
+        1: "",  # Ignore normal attack styles
+        2: "",  # Hit weak
+        4: "",  # Big toss
+        6: "",  # Guard
+        7: "23",  # Cat
+    }
+
+    # Damage Types CAN be combined
+    damage_types = {
+        0: "",  # None
+        1: "28",  # Holy
+        2: "29",  # Ice
+        4: "2c",  # Lightning
+        8: "26",  # Fire
+    }
+
+    # Special Types CAN be combined
+    special_types = {
+        0: "",  # None
+        1: "35",  # Curse
+        2: "33",  # Stone
+        4: "37",  # Water
+        8: "24",  # Dark
+    }
+
+    hit_type_value = (hex_value >> 4) & 0xf
+    hit_type = hit_types[hit_type_value]
+
+    hit_effect_value = hex_value & 0xf
+    hit_effect = hit_effects[hit_effect_value]
+
+    damage_type_value = (hex_value >> 12) & 0xf
+    damage_type = get_stat_type(damage_types, damage_type_value)
+
+    special_type_value = (hex_value >> 8) & 0xf
+    special_type = get_stat_type(special_types, special_type_value)
+
+    return f"{hit_type}{hit_effect}{damage_type}{special_type}"
+
+
+def hex_value_to_defence_string(hex_value: int) -> str:
+    # Hit types can't be combined
+    hit_types = {
+        0: "3f",  # No resistence
+        1: "",  # Hit 16%
+        2: "03",  # Hit
+        4: "0f",  # Cut
+        5: "",  # Cut 16%
+        6: "",  # Cut weak
+        8: "30",  # Poison
+    }
+
+    # Hit effects can't be combined
+    hit_effects = {
+        0: "",  # No hit box
+        1: "",  # Ignore normal attack styles
+        2: "",  # Hit weak
+        4: "",  # Big toss
+        6: "",  # Guard
+        7: "23",  # Cat
+    }
+
+    # Damage Types CAN be combined
+    damage_types = {
+        0: "",  # None
+        1: "28",  # Holy
+        2: "29",  # Ice
+        4: "2c",  # Lightning
+        8: "26",  # Fire
+    }
+
+    # Special Types CAN be combined
+    special_types = {
+        0: "",  # None
+        1: "35",  # Curse
+        2: "33",  # Stone
+        4: "37",  # Water
+        8: "24",  # Dark
+    }
+
+    hit_type_value = (hex_value >> 4) & 0xf
+    hit_type = hit_types[hit_type_value]
+
+    hit_effect_value = hex_value & 0xf
+    hit_effect = hit_effects[hit_effect_value]
+
+    damage_type_value = (hex_value >> 12) & 0xf
+    damage_type = damage_types[damage_type_value]
+
+    special_type_value = (hex_value >> 8) & 0xf
+    special_type = special_types[special_type_value]
+
+    return f"{hit_type}{hit_effect}{damage_type}{special_type}"
+
+
+def enemy_resist_type_stat_rand(world: "SotnWorld") -> int:
+    # We want nothing 50% of the time, and a random type all other times
+    if world.random.uniform(0, 1) >= 0.5:
+        return 0x0000
+
+    type_list = [
+        0x0020,  # hit
+        0x0040,  # cut
+        0x0080,  # poison
+        0x8000,  # Fire
+        0x2000,  # Ice
+        0x1000,  # Holy
+        0x4000,  # Lightning
+        0x0100,  # Curse
+        0x0200,  # Stone
+        0x0800,   # Dark
+    ]
+
+    return world.random.choice(type_list)
+
+
+def enemy_num_stat_rand(world: "SotnWorld", original_stat: int) -> int:
+    random_number = world.random.uniform(0.25, 2.00)
+
+    new_value = int(round(random_number * original_stat))
+    return new_value
+
+
+# Thanks eldri7ch
+def no_prologue(patch: SotnProcedurePatch):
     # Patch from Chaos-Lite / MottZilla
     patch.write_token(APTokenTypes.WRITE, 0x04392b1c, struct.pack("<B", 0x41))
 
@@ -1510,6 +2496,438 @@ def skip_prologue(patch: SotnProcedurePatch):
     offset += 4
 
 
+# Researched by MottZilla & eldri7ch. Function by eldri7ch
+def map_color(map_col: int, patch: SotnProcedurePatch):
+    address_al = 0x03874848  # define address for Alucard maps
+    address_ri = 0x038C0508  # define address for Richter maps
+    address_al_bord = 0x03874864  # define address for Alucard maps borders
+    address_ri_bord = 0x038C0524  # define address for Richter maps borders
+
+    # Patch map colors - eldri7ch. WHY PYTHON DOES NOT HAVE A SWITCH/CASE??? I MISS C
+    if map_col == 1:  # Dark Blue
+        color_write = 0xb0000000
+        patch.write_token(APTokenTypes.WRITE, address_al, color_write.to_bytes(4, "little"))
+        patch.write_token(APTokenTypes.WRITE, address_ri, color_write.to_bytes(4, "little"))
+    elif map_col == 2:  # Crimson
+        color_write = 0x00500000
+    elif map_col == 3:  # Brown
+        color_write = 0x80ca0000
+    elif map_col == 4:  # Dark Green
+        color_write = 0x09000000
+    elif map_col == 5:  # Gray
+        color_write = 0xE3180000
+        bord_write = 0xffff
+    elif map_col == 6:  # Purple
+        color_write = 0xB0080000
+    elif map_col == 7:  # Pink
+        color_write = 0xff1f0000
+        bord_write = 0xfd0f
+    elif map_col == 8:  # Black
+        color_write = 0x10000000
+    elif map_col == 9:  # Invisible
+        color_write = 0x00000000
+
+    try:
+        patch.write_token(APTokenTypes.WRITE, address_al, color_write.to_bytes(4, "little"))
+        patch.write_token(APTokenTypes.WRITE, address_ri, color_write.to_bytes(4, "little"))
+    except NameError:
+        pass
+
+    try:
+        patch.write_token(APTokenTypes.WRITE, address_al_bord, bord_write.to_bytes(2, "little"))
+        patch.write_token(APTokenTypes.WRITE, address_ri_bord, bord_write.to_bytes(2, "little"))
+    except NameError:
+        pass
+
+
+# Alucard Palette Randomizer - CRAZY4BLADES, palettes by eldri7ch
+def alucard_palette(al_col_p: int, patch: SotnProcedurePatch):
+    color_alucard_bright = 1
+    palettes_alucard =\
+        [
+            [],                                                        # Default
+            [0x8404, 0x8c28, 0x8c4c, 0xa552, 0xb9f3, 0xcad8, 0xf39c],  # Bloody Tears
+            [0x9021, 0xa043, 0xb8a6, 0xc529, 0xcded, 0xcef5, 0xf39c],  # Blue Danube
+            [0x8042, 0x8082, 0x80c6, 0x8d2f, 0xa9d1, 0xc6d5, 0xe39b],  # Swamp Thing
+            [0x9063, 0x94a5, 0xa12a, 0xb9f0, 0xd674, 0xeb5b, 0xf39c],  # White Knight
+            [0x8c02, 0x9c04, 0xac88, 0xbd0a, 0xcdad, 0xc655, 0xcf18],  # Royal Purple
+            [0x9024, 0x9867, 0xa8ac, 0xbd31, 0xcdf5, 0xeabb, 0xfb1d],  # Pink Passion
+            [0x8000, 0x8c42, 0x98a5, 0xa0e9, 0xa96d, 0xb9f1, 0xc655],  # Shadow Prince
+        ]
+
+    # Cloth
+    offset = 0xef952
+    for i in range(5):
+        index = i + color_alucard_bright + 1
+        patch.write_token(APTokenTypes.WRITE, offset, palettes_alucard[al_col_p][index].to_bytes(2, "little"))
+        offset += 2
+
+    # Darkest color
+    offset = 0xef93e
+    index = color_alucard_bright
+    patch.write_token(APTokenTypes.WRITE, offset, palettes_alucard[al_col_p][index].to_bytes(2, "little"))
+
+
+def alucard_liner(al_col_l: int, patch: SotnProcedurePatch):
+    palettes_alucard_liner = [
+        [0x84ab, 0x8d2f, 0x91d6, 0x929b],  # Gold Trim (Default)
+        [0x8465, 0x88a8, 0x88ec, 0x9151],  # Bronze Trim
+        [0x94a6, 0xa54a, 0xb9ef, 0xc693],  # Silver Trim
+        [0x8c43, 0x98a5, 0x9cc8, 0xa54c],  # Onyx Trim
+        [0xa8ac, 0xad0f, 0xadb3, 0xbe16],  # Coral Trim
+    ]
+
+    offset = 0xef940
+    for i in range(4):
+        patch.write_token(APTokenTypes.WRITE, offset, palettes_alucard_liner[al_col_l][i].to_bytes(2, "little"))
+        offset += 2
+
+
+def magic_max(patch: SotnProcedurePatch):
+    offset = 0x00117b50	 # Set Starting Offset
+    # Patch MP Vessels function Heart Vessels - code by MottZilla & graphics drawn by eldri7ch
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c028004).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8c42c9a0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x10400003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0803f8e7).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34020001).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c058009).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8ca47bac).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8ca67ba8).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x24840005).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaca47bac).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x24c60005).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaca67ba8).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8ca47bb4).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x24840003).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaca47bb0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaca47bb4).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3c058013).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34a57964).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x8ca40000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x24840001).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaca40000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0803f8e7).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34020000).to_bytes(4, "little"))
+    # Patch GFX - MottZilla
+    offset = 0x3868268
+    patch.write_token(APTokenTypes.WRITE, offset, (0x40000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x40000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x40000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x40000000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7200000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x277).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7200000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x277).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7200000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x277).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7200000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x277).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x97122000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x22169).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x97122000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x22169).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x97122000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x22169).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x97122000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x22169).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x1f944300).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x344971).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x1f944300).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x344971).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x1f944300).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x344971).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x1f944300).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x344971).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa9432130).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x321449a).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa9432130).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x321449a).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa9432130).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x321449a).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa9432130).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x321449a).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x93319920).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2992349).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x93319920).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2992349).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x93319920).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2992349).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x93319920).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2992349).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3f2c7690).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9679233).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3f2c7690).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9679233).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3f2c7690).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9679233).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x3f2c7690).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9679233).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf29ccf60).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x6fab913).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf29ccf60).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x6fab913).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf293cf60).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x6fab913).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf23c3f60).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x6fab913).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x19accbf0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf9aaa91).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x19cfcbf0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf9aaa91).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x193f3bf0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf9aaa91).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x19cfcbf0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf9aaa91).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9accba70).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa9).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9accba70).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa9).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9ac3ba70).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa9).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x9ac3ba70).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa9).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xabccaf00).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xabccaf00).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xabccaf00).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xabccaf00).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79baaa).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xbbbaf000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79bab).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xbbbaf000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79bab).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xbbbaf000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79bab).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xbbbaf000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79bab).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaaa70000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79aa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaaa70000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79aa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaaa70000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79aa).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xaaa70000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x79aa).to_bytes(4, "little"))
+    offset += 0x24
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x67f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x67f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x67f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xf7600000).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x67f).to_bytes(4, "little"))
+    offset += 4
+
+
+def anti_freeze(patch: SotnProcedurePatch):
+    # Patch screen freeze value - eldri7ch
+    patch.write_token(APTokenTypes.WRITE, 0x00140a2c, struct.pack("<B", 0x00))
+
+
+def my_purse(patch: SotnProcedurePatch):
+    # Patch Death goes home - eldri7ch
+    patch.write_token(APTokenTypes.WRITE, 0x04baea08, (0x18000006).to_bytes(4, "little"))
+
+
+def fast_warp(patch: SotnProcedurePatch):
+    # Patch warp animation speed - eldri7ch
+    patch.write_token(APTokenTypes.WRITE, 0x0588be90, struct.pack("<B", 0x02))  # Patch from Aperture / MottZilla
+    patch.write_token(APTokenTypes.WRITE, 0x05a78fe4, struct.pack("<B", 0x02))
+
+
+def unlocked_patches(patch: SotnProcedurePatch):
+    tile_remove = 0x00000000  # set tile overwrites to remove them
+    memory_skip = 0x34020001  # set register 2 to 01 instead of whatever RAM said
+    nop_value = 0x00000000  # nop instruction follow-up
+
+    # Patch the reverse entrance shortcut - eldri7ch
+    offset = 0x051caaee  # remove the blocking tiles - eldri7ch
+    for _ in range(8):
+        patch.write_token(APTokenTypes.WRITE, offset, tile_remove.to_bytes(4, "little"))
+        offset += 0x40
+
+    offset_list = [
+        0x05430050, 0x05430518, 0x04ba840c, 0x04ba88ac,  # Underground Caverns - Entrance shortcut - eldri7ch
+        0x04ba8bc4, 0x04ba8dd4, 0x04ba8e00, 0x04ba918c, 0x04ba91b4, 0x05430844, 0x05430a80, 0x05430bd0, 0x05430e3c,
+        0x05430e64,  # Marble Gallery - Entrance shortcut - eldri7ch
+        0x04bab2d4, 0x04bab534, 0x04bab674, 0x054325dc, 0x0543283c, 0x0543297c,  # Warp Room - Entrance shortcut - eldri7ch
+        0x046c082c,  # Olrox's Quarters - Royal Chapel shortcut - eldri7ch
+        0x0440100c, 0x04401100,  # Colosseum - Royal Chapel shortcut - eldri7ch
+    ]
+
+    patch.write_token(APTokenTypes.WRITE, 0x051b03c2, (0x030e).to_bytes(2, "little"))  # move the entity down - eldri7ch
+    patch.write_token(APTokenTypes.WRITE, 0x051afb80, (0x030e).to_bytes(2, "little"))
+    for o in offset_list:
+        offset = o
+        patch.write_token(APTokenTypes.WRITE, offset, memory_skip.to_bytes(4, "little"))
+        offset += 4
+        patch.write_token(APTokenTypes.WRITE, offset, nop_value.to_bytes(4, "little"))
+
+
+def surprise_patches(patch: SotnProcedurePatch):
+    surprise_pal = 0x01020111  # set tile overwrites to remove them
+    # Patch the sprites for each relic - eldri7ch; code by MottZilla
+    offset = 0x000b5550  # start with Soul of Bat - eldri7ch
+    for i in range(30):
+        patch.write_token(APTokenTypes.WRITE, offset, surprise_pal.to_bytes(4, "little"))
+        if i == 13:
+            offset += 0x140
+        else:
+            offset += 0x10
+
+
 def get_base_rom_bytes(audio: bool = False) -> bytes:
     if not audio:
         file_name = get_settings().sotn_settings.rom_file
@@ -1543,7 +2961,7 @@ def write_seed(patch: SotnProcedurePatch, seed, player_number, player_name, sani
 
     # Seed number occupies 10 bytes total line have 22 + 0xFF 0x00 at end
     # There are 2 unused bytes from bonus luck
-    for i, num in enumerate(str(seed)):
+    for i, num in enumerate(seed):
         if i % 2 != 0:
             byte = (byte | int(num))
             seed_text.append(byte)
@@ -1551,7 +2969,14 @@ def write_seed(patch: SotnProcedurePatch, seed, player_number, player_name, sani
         else:
             byte = (int(num) << 4)
 
-    seed_text.append(player_number)
+    if player_number < 255:
+        seed_text.append(0)
+        seed_text.append(player_number)
+    else:
+        b_array = bytearray(player_number.to_bytes(2, "big"))
+        seed_text.append(b_array[0])
+        seed_text.append(b_array[1])
+
     seed_text.append(sanity_options)
 
     # Still space on 1st maria meeting text
