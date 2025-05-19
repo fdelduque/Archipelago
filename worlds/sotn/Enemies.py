@@ -4575,6 +4575,550 @@ enemy_stats_list = [
     },
 ]
 
+enemy_atk_type_list = [
+    0x0000,  # No hitbox
+    0x0000,  # No hitbox
+    0x0000,  # No hitbox
+    0x0006,  # guard
+    0x0006,  # guard
+    0x0006,  # guard
+    0x0021,  # Normal Hit
+    0x0021,  # Normal Hit
+    0x0021,  # Normal Hit
+    0x0121,  # Hit Curse
+    0x0221,  # Hit Stone
+    0x0321,  # Hit Stone Curse
+    0x0421,  # Hit Water
+    0x0421,  # Hit Water
+    0x0421,  # Hit Water
+    0x0521,  # Hit Water Curse
+    0x0621,  # Hit Water Stone
+    0x0821,  # Hit Dark
+    0x0821,  # Hit Dark
+    0x0821,  # Hit Dark
+    0x0921,  # Hit Dark Curse
+    0x0a21,  # Hit Dark Stone
+    0x0c21,  # Hit Dark Water
+    0x0c21,  # Hit Dark Water
+    0x0c21,  # Hit Dark Water
+    0x1021,  # Hit Holy
+    0x1021,  # Hit Holy
+    0x1021,  # Hit Holy
+    0x1021,  # Hit Holy
+    0x1021,  # Hit Holy
+    0x1121,  # Hit Holy Curse
+    0x1221,  # Hit Holy Stone
+    0x1421,  # Hit Holy Water
+    0x1421,  # Hit Holy Water
+    0x1421,  # Hit Holy Water
+    0x1821,  # Hit Holy Dark
+    0x1821,  # Hit Holy Dark
+    0x1821,  # Hit Holy Dark
+    0x2021,  # Hit Ice
+    0x2021,  # Hit Ice
+    0x2021,  # Hit Ice
+    0x2121,  # Hit Ice Curse
+    0x2221,  # Hit Ice Stone
+    0x2421,  # Hit Ice Water
+    0x2821,  # Hit Ice Dark
+    0x2821,  # Hit Ice Dark
+    0x2821,  # Hit Ice Dark
+    0x3021,  # Hit Holy Ice
+    0x3021,  # Hit Holy Ice
+    0x3021,  # Hit Holy Ice
+    0x4021,  # Hit Lightning
+    0x4021,  # Hit Lightning
+    0x4021,  # Hit Lightning
+    0x4121,  # Hit Lightning Curse
+    0x4221,  # Hit Lightning Stone
+    0x4421,  # Hit Lightning Water
+    0x4421,  # Hit Lightning Water
+    0x4421,  # Hit Lightning Water
+    0x4821,  # Hit Lightning Dark
+    0x4821,  # Hit Lightning Dark
+    0x4821,  # Hit Lightning Dark
+    0x5021,  # Hit Holy Lightning
+    0x5021,  # Hit Holy Lightning
+    0x5021,  # Hit Holy Lightning
+    0x6021,  # Hit Ice Lightning
+    0x6021,  # Hit Ice Lightning
+    0x6021,  # Hit Ice Lightning
+    0x8021,  # Hit Fire
+    0x8021,  # Hit Fire
+    0x8021,  # Hit Fire
+    0x8121,  # Hit Fire Curse
+    0x8221,  # Hit Fire Stone
+    0x8421,  # Hit Fire Water
+    0x8421,  # Hit Fire Water
+    0x8421,  # Hit Fire Water
+    0x8821,  # Hit Fire Dark
+    0x8821,  # Hit Fire Dark
+    0x8821,  # Hit Fire Dark
+    0x9021,  # Hit Holy Fire
+    0x9021,  # Hit Holy Fire
+    0x9021,  # Hit Holy Fire
+    0xA021,  # Hit Ice Fire
+    0xA021,  # Hit Ice Fire
+    0xA021,  # Hit Ice Fire
+    0xC021,  # Hit Lightning Fire
+    0xC021,  # Hit Lightning Fire
+    0xC021,  # Hit Lightning Fire
+    0x0124,  # Hit Curse
+    0x0224,  # Hit Stone
+    0x0324,  # Hit Stone Curse
+    0x0424,  # Hit Water
+    0x0424,  # Hit Water
+    0x0424,  # Hit Water
+    0x0524,  # Hit Water Curse
+    0x0624,  # Hit Water Stone
+    0x0824,  # Hit Dark
+    0x0824,  # Hit Dark
+    0x0824,  # Hit Dark
+    0x0924,  # Hit Dark Curse
+    0x0a24,  # Hit Dark Stone
+    0x0c24,  # Hit Dark Water
+    0x0c24,  # Hit Dark Water
+    0x0c24,  # Hit Dark Water
+    0x1024,  # Hit Holy
+    0x1024,  # Hit Holy
+    0x1024,  # Hit Holy
+    0x1024,  # Hit Holy
+    0x1024,  # Hit Holy
+    0x1124,  # Hit Holy Curse
+    0x1224,  # Hit Holy Stone
+    0x1424,  # Hit Holy Water
+    0x1424,  # Hit Holy Water
+    0x1424,  # Hit Holy Water
+    0x1824,  # Hit Holy Dark
+    0x1824,  # Hit Holy Dark
+    0x1824,  # Hit Holy Dark
+    0x2024,  # Hit Ice
+    0x2024,  # Hit Ice
+    0x2024,  # Hit Ice
+    0x2124,  # Hit Ice Curse
+    0x2224,  # Hit Ice Stone
+    0x2424,  # Hit Ice Water
+    0x2824,  # Hit Ice Dark
+    0x2824,  # Hit Ice Dark
+    0x2824,  # Hit Ice Dark
+    0x3024,  # Hit Holy Ice
+    0x3024,  # Hit Holy Ice
+    0x3024,  # Hit Holy Ice
+    0x4024,  # Hit Lightning
+    0x4024,  # Hit Lightning
+    0x4024,  # Hit Lightning
+    0x4124,  # Hit Lightning Curse
+    0x4224,  # Hit Lightning Stone
+    0x4424,  # Hit Lightning Water
+    0x4424,  # Hit Lightning Water
+    0x4424,  # Hit Lightning Water
+    0x4824,  # Hit Lightning Dark
+    0x4824,  # Hit Lightning Dark
+    0x4824,  # Hit Lightning Dark
+    0x5024,  # Hit Holy Lightning
+    0x5024,  # Hit Holy Lightning
+    0x5024,  # Hit Holy Lightning
+    0x6024,  # Hit Ice Lightning
+    0x6024,  # Hit Ice Lightning
+    0x6024,  # Hit Ice Lightning
+    0x8024,  # Hit Fire
+    0x8024,  # Hit Fire
+    0x8024,  # Hit Fire
+    0x8124,  # Hit Fire Curse
+    0x8224,  # Hit Fire Stone
+    0x8424,  # Hit Fire Water
+    0x8424,  # Hit Fire Water
+    0x8424,  # Hit Fire Water
+    0x8824,  # Hit Fire Dark
+    0x8824,  # Hit Fire Dark
+    0x8824,  # Hit Fire Dark
+    0x9024,  # Hit Holy Fire
+    0x9024,  # Hit Holy Fire
+    0x9024,  # Hit Holy Fire
+    0xA024,  # Hit Ice Fire
+    0xA024,  # Hit Ice Fire
+    0xA024,  # Hit Ice Fire
+    0xC024,  # Hit Lightning Fire
+    0xC024,  # Hit Lightning Fire
+    0xC024,  # Hit Lightning Fire
+    0x0041,  # Normal Cut
+    0x0041,  # Normal Cut
+    0x0041,  # Normal Cut
+    0x0141,  # Cut Curse
+    0x0241,  # Cut Stone
+    0x0341,  # Cut Stone Curse
+    0x0441,  # Cut Water
+    0x0441,  # Cut Water
+    0x0441,  # Cut Water
+    0x0541,  # Cut Water Curse
+    0x0641,  # Cut Water Stone
+    0x0841,  # Cut Dark
+    0x0841,  # Cut Dark
+    0x0841,  # Cut Dark
+    0x0941,  # Cut Dark Curse
+    0x0a41,  # Cut Dark Stone
+    0x0c41,  # Cut Dark Water
+    0x0c41,  # Cut Dark Water
+    0x0c41,  # Cut Dark Water
+    0x1041,  # Cut Holy
+    0x1041,  # Cut Holy
+    0x1041,  # Cut Holy
+    0x1141,  # Cut Holy Curse
+    0x1241,  # Cut Holy Stone
+    0x1441,  # Cut Holy Water
+    0x1441,  # Cut Holy Water
+    0x1441,  # Cut Holy Water
+    0x1841,  # Cut Holy Dark
+    0x1841,  # Cut Holy Dark
+    0x1841,  # Cut Holy Dark
+    0x2041,  # Cut Ice
+    0x2041,  # Cut Ice
+    0x2041,  # Cut Ice
+    0x2141,  # Cut Ice Curse
+    0x2241,  # Cut Ice Stone
+    0x2441,  # Cut Ice Water
+    0x2441,  # Cut Ice Water
+    0x2441,  # Cut Ice Water
+    0x2841,  # Cut Ice Dark
+    0x2841,  # Cut Ice Dark
+    0x2841,  # Cut Ice Dark
+    0x3041,  # Cut Holy Ice
+    0x3041,  # Cut Holy Ice
+    0x3041,  # Cut Holy Ice
+    0x4041,  # Cut Lightning
+    0x4041,  # Cut Lightning
+    0x4041,  # Cut Lightning
+    0x4141,  # Cut Lightning Curse
+    0x4241,  # Cut Lightning Stone
+    0x4441,  # Cut Lightning Water
+    0x4441,  # Cut Lightning Water
+    0x4441,  # Cut Lightning Water
+    0x4841,  # Cut Lightning Dark
+    0x4841,  # Cut Lightning Dark
+    0x4841,  # Cut Lightning Dark
+    0x5041,  # Cut Holy Lightning
+    0x5041,  # Cut Holy Lightning
+    0x5041,  # Cut Holy Lightning
+    0x6041,  # Cut Ice Lightning
+    0x6041,  # Cut Ice Lightning
+    0x6041,  # Cut Ice Lightning
+    0x8041,  # Cut Fire
+    0x8041,  # Cut Fire
+    0x8041,  # Cut Fire
+    0x8141,  # Cut Fire Curse
+    0x8241,  # Cut Fire Stone
+    0x8441,  # Cut Fire Water
+    0x8441,  # Cut Fire Water
+    0x8441,  # Cut Fire Water
+    0x8841,  # Cut Fire Dark
+    0x8841,  # Cut Fire Dark
+    0x8841,  # Cut Fire Dark
+    0x9041,  # Cut Holy Fire
+    0x9041,  # Cut Holy Fire
+    0x9041,  # Cut Holy Fire
+    0xA041,  # Cut Ice Fire
+    0xA041,  # Cut Ice Fire
+    0xA041,  # Cut Ice Fire
+    0xC041,  # Cut Lightning Fire
+    0xC041,  # Cut Lightning Fire
+    0xC041,  # Cut Lightning Fire
+    0x0044,  # Normal Cut
+    0x0044,  # Normal Cut
+    0x0044,  # Normal Cut
+    0x0144,  # Cut Curse
+    0x0244,  # Cut Stone
+    0x0344,  # Cut Stone Curse
+    0x0444,  # Cut Water
+    0x0444,  # Cut Water
+    0x0444,  # Cut Water
+    0x0544,  # Cut Water Curse
+    0x0644,  # Cut Water Stone
+    0x0844,  # Cut Dark
+    0x0844,  # Cut Dark
+    0x0844,  # Cut Dark
+    0x0944,  # Cut Dark Curse
+    0x0a44,  # Cut Dark Stone
+    0x0c44,  # Cut Dark Water
+    0x0c44,  # Cut Dark Water
+    0x0c44,  # Cut Dark Water
+    0x1044,  # Cut Holy
+    0x1044,  # Cut Holy
+    0x1044,  # Cut Holy
+    0x1144,  # Cut Holy Curse
+    0x1244,  # Cut Holy Stone
+    0x1444,  # Cut Holy Water
+    0x1444,  # Cut Holy Water
+    0x1444,  # Cut Holy Water
+    0x1844,  # Cut Holy Dark
+    0x1844,  # Cut Holy Dark
+    0x1844,  # Cut Holy Dark
+    0x2044,  # Cut Ice
+    0x2044,  # Cut Ice
+    0x2044,  # Cut Ice
+    0x2144,  # Cut Ice Curse
+    0x2244,  # Cut Ice Stone
+    0x2444,  # Cut Ice Water
+    0x2444,  # Cut Ice Water
+    0x2444,  # Cut Ice Water
+    0x2844,  # Cut Ice Dark
+    0x2844,  # Cut Ice Dark
+    0x2844,  # Cut Ice Dark
+    0x3044,  # Cut Holy Ice
+    0x3044,  # Cut Holy Ice
+    0x3044,  # Cut Holy Ice
+    0x4044,  # Cut Lightning
+    0x4044,  # Cut Lightning
+    0x4044,  # Cut Lightning
+    0x4144,  # Cut Lightning Curse
+    0x4244,  # Cut Lightning Stone
+    0x4444,  # Cut Lightning Water
+    0x4444,  # Cut Lightning Water
+    0x4444,  # Cut Lightning Water
+    0x4844,  # Cut Lightning Dark
+    0x4844,  # Cut Lightning Dark
+    0x4844,  # Cut Lightning Dark
+    0x5044,  # Cut Holy Lightning
+    0x5044,  # Cut Holy Lightning
+    0x5044,  # Cut Holy Lightning
+    0x6044,  # Cut Ice Lightning
+    0x6044,  # Cut Ice Lightning
+    0x6044,  # Cut Ice Lightning
+    0x8044,  # Cut Fire
+    0x8044,  # Cut Fire
+    0x8044,  # Cut Fire
+    0x8144,  # Cut Fire Curse
+    0x8244,  # Cut Fire Stone
+    0x8444,  # Cut Fire Water
+    0x8444,  # Cut Fire Water
+    0x8444,  # Cut Fire Water
+    0x8844,  # Cut Fire Dark
+    0x8844,  # Cut Fire Dark
+    0x8844,  # Cut Fire Dark
+    0x9044,  # Cut Holy Fire
+    0x9044,  # Cut Holy Fire
+    0x9044,  # Cut Holy Fire
+    0xA044,  # Cut Ice Fire
+    0xA044,  # Cut Ice Fire
+    0xA044,  # Cut Ice Fire
+    0xC044,  # Cut Lightning Fire
+    0xC044,  # Cut Lightning Fire
+    0xC044,  # Cut Lightning Fire
+    0x0080,  # Normal Poison
+    0x0080,  # Normal Poison
+    0x0080,  # Normal Poison
+    0x0180,  # Poison Curse
+    0x0280,  # Poison Stone
+    0x0480,  # Poison Water
+    0x0480,  # Poison Water
+    0x0480,  # Poison Water
+    0x0880,  # Poison Dark
+    0x0880,  # Poison Dark
+    0x0880,  # Poison Dark
+    0x1080,  # Poison Holy
+    0x1080,  # Poison Holy
+    0x1080,  # Poison Holy
+    0x2080,  # Poison Ice
+    0x2080,  # Poison Ice
+    0x2080,  # Poison Ice
+    0x4080,  # Poison Lightning
+    0x4080,  # Poison Lightning
+    0x4080,  # Poison Lightning
+    0x8080,  # Poison Fire
+    0x8080,  # Poison Fire
+    0x8080,  # Poison Fire
+    0x0084,  # Poison Big Toss
+    0x0084,  # Poison Big Toss
+    0x0084,  # Poison Big Toss
+    0x0184,  # Poison Big Toss Curse
+    0x0284,  # Poison Big Toss Stone
+    0x0484,  # Poison Big Toss Water
+    0x0484,  # Poison Big Toss Water
+    0x0484,  # Poison Big Toss Water
+    0x0884,  # Poison Big Toss Dark
+    0x0884,  # Poison Big Toss Dark
+    0x0884,  # Poison Big Toss Dark
+    0x1084,  # Poison Big Toss Holy
+    0x1084,  # Poison Big Toss Holy
+    0x1084,  # Poison Big Toss Holy
+    0x2084,  # Poison Big Toss Ice
+    0x2084,  # Poison Big Toss Ice
+    0x2084,  # Poison Big Toss Ice
+    0x4084,  # Poison Big Toss Lightning
+    0x4084,  # Poison Big Toss Lightning
+    0x4084,  # Poison Big Toss Lightning
+    0x8084,  # Poison Big Toss Fire
+    0x8084,  # Poison Big Toss Fire
+    0x8084,  # Poison Big Toss Fire
+    0x0007,  # Cat
+    0x0007,  # Cat
+    0x0007,  # Cat
+    0x0107,  # Cat Curse
+    0x0207,  # Cat Stone
+    0x0407,  # Cat Water
+    0x0407,  # Cat Water
+    0x0407,  # Cat Water
+    0x0807,  # Cat Dark
+    0x0807,  # Cat Dark
+    0x0807,  # Cat Dark
+    0x1007,  # Cat Holy
+    0x1007,  # Cat Holy
+    0x1007,  # Cat Holy
+    0x2007,  # Cat Ice
+    0x2007,  # Cat Ice
+    0x2007,  # Cat Ice
+    0x4007,  # Cat Lightning
+    0x4007,  # Cat Lightning
+    0x4007,  # Cat Lightning
+    0x8007,  # Cat Fire
+    0x8007,  # Cat Fire
+    0x8007,  # Cat Fire
+    0x0011,  # Normal Hit 1/6
+    0x0011,  # Normal Hit 1/6
+    0x0011,  # Normal Hit 1/6
+    0x0411,  # Hit 1/6 Water
+    0x0411,  # Hit 1/6 Water
+    0x0411,  # Hit 1/6 Water
+    0x0811,  # Hit 1/6 Dark
+    0x0811,  # Hit 1/6 Dark
+    0x0811,  # Hit 1/6 Dark
+    0x0c11,  # Hit 1/6 Dark Water
+    0x0c11,  # Hit 1/6 Dark Water
+    0x0c11,  # Hit 1/6 Dark Water
+    0x1011,  # Hit 1/6 Holy
+    0x1011,  # Hit 1/6 Holy
+    0x1011,  # Hit 1/6 Holy
+    0x1411,  # Hit 1/6 Holy Water
+    0x1411,  # Hit 1/6 Holy Water
+    0x1411,  # Hit 1/6 Holy Water
+    0x1811,  # Hit 1/6 Holy Dark
+    0x1811,  # Hit 1/6 Holy Dark
+    0x1811,  # Hit 1/6 Holy Dark
+    0x2011,  # Hit 1/6 Ice
+    0x2011,  # Hit 1/6 Ice
+    0x2011,  # Hit 1/6 Ice
+    0x2411,  # Hit 1/6 Ice Water
+    0x2411,  # Hit 1/6 Ice Water
+    0x2411,  # Hit 1/6 Ice Water
+    0x2811,  # Hit 1/6 Ice Dark
+    0x2811,  # Hit 1/6 Ice Dark
+    0x2811,  # Hit 1/6 Ice Dark
+    0x3011,  # Hit 1/6 Holy Ice
+    0x3011,  # Hit 1/6 Holy Ice
+    0x3011,  # Hit 1/6 Holy Ice
+    0x4011,  # Hit 1/6 Lightning
+    0x4011,  # Hit 1/6 Lightning
+    0x4011,  # Hit 1/6 Lightning
+    0x4411,  # Hit 1/6 Lightning Water
+    0x4411,  # Hit 1/6 Lightning Water
+    0x4411,  # Hit 1/6 Lightning Water
+    0x4811,  # Hit 1/6 Lightning Dark
+    0x4811,  # Hit 1/6 Lightning Dark
+    0x4811,  # Hit 1/6 Lightning Dark
+    0x5011,  # Hit 1/6 Holy Lightning
+    0x5011,  # Hit 1/6 Holy Lightning
+    0x5011,  # Hit 1/6 Holy Lightning
+    0x6011,  # Hit 1/6 Ice Lightning
+    0x6011,  # Hit 1/6 Ice Lightning
+    0x6011,  # Hit 1/6 Ice Lightning
+    0x8011,  # Hit 1/6 Fire
+    0x8011,  # Hit 1/6 Fire
+    0x8011,  # Hit 1/6 Fire
+    0x8411,  # Hit 1/6 Fire Water
+    0x8411,  # Hit 1/6 Fire Water
+    0x8411,  # Hit 1/6 Fire Water
+    0x8811,  # Hit 1/6 Fire Dark
+    0x8811,  # Hit 1/6 Fire Dark
+    0x8811,  # Hit 1/6 Fire Dark
+    0x9011,  # Hit 1/6 Holy Fire
+    0x9011,  # Hit 1/6 Holy Fire
+    0x9011,  # Hit 1/6 Holy Fire
+    0xA011,  # Hit 1/6 Ice Fire
+    0xA011,  # Hit 1/6 Ice Fire
+    0xA011,  # Hit 1/6 Ice Fire
+    0xC011,  # Hit 1/6 Lightning Fire
+    0xC011,  # Hit 1/6 Lightning Fire
+    0xC011,  # Hit 1/6 Lightning Fire
+    0x0051,  # Normal Cut 1/6
+    0x0051,  # Normal Cut 1/6
+    0x0051,  # Normal Cut 1/6
+    0x0451,  # Cut 1/6 Water
+    0x0451,  # Cut 1/6 Water
+    0x0451,  # Cut 1/6 Water
+    0x0851,  # Cut 1/6 Dark
+    0x0851,  # Cut 1/6 Dark
+    0x0851,  # Cut 1/6 Dark
+    0x0c51,  # Cut 1/6 Dark Water
+    0x0c51,  # Cut 1/6 Dark Water
+    0x0c51,  # Cut 1/6 Dark Water
+    0x1051,  # Cut 1/6 Holy
+    0x1051,  # Cut 1/6 Holy
+    0x1051,  # Cut 1/6 Holy
+    0x1451,  # Cut 1/6 Holy Water
+    0x1451,  # Cut 1/6 Holy Water
+    0x1451,  # Cut 1/6 Holy Water
+    0x1851,  # Cut 1/6 Holy Dark
+    0x1851,  # Cut 1/6 Holy Dark
+    0x1851,  # Cut 1/6 Holy Dark
+    0x2051,  # Cut 1/6 Ice
+    0x2051,  # Cut 1/6 Ice
+    0x2051,  # Cut 1/6 Ice
+    0x2451,  # Cut 1/6 Ice Water
+    0x2451,  # Cut 1/6 Ice Water
+    0x2451,  # Cut 1/6 Ice Water
+    0x2851,  # Cut 1/6 Ice Dark
+    0x2851,  # Cut 1/6 Ice Dark
+    0x2851,  # Cut 1/6 Ice Dark
+    0x3051,  # Cut 1/6 Holy Ice
+    0x3051,  # Cut 1/6 Holy Ice
+    0x3051,  # Cut 1/6 Holy Ice
+    0x4051,  # Cut 1/6 Lightning
+    0x4051,  # Cut 1/6 Lightning
+    0x4051,  # Cut 1/6 Lightning
+    0x4451,  # Cut 1/6 Lightning Water
+    0x4451,  # Cut 1/6 Lightning Water
+    0x4451,  # Cut 1/6 Lightning Water
+    0x4851,  # Cut 1/6 Lightning Dark
+    0x4851,  # Cut 1/6 Lightning Dark
+    0x4851,  # Cut 1/6 Lightning Dark
+    0x5051,  # Cut 1/6 Holy Lightning
+    0x5051,  # Cut 1/6 Holy Lightning
+    0x5051,  # Cut 1/6 Holy Lightning
+    0x6051,  # Cut 1/6 Ice Lightning
+    0x6051,  # Cut 1/6 Ice Lightning
+    0x6051,  # Cut 1/6 Ice Lightning
+    0x8051,  # Cut 1/6 Fire
+    0x8051,  # Cut 1/6 Fire
+    0x8051,  # Cut 1/6 Fire
+    0x8451,  # Cut 1/6 Fire Water
+    0x8451,  # Cut 1/6 Fire Water
+    0x8451,  # Cut 1/6 Fire Water
+    0x8851,  # Cut 1/6 Fire Dark
+    0x8851,  # Cut 1/6 Fire Dark
+    0x8851,  # Cut 1/6 Fire Dark
+    0x9051,  # Cut 1/6 Holy Fire
+    0x9051,  # Cut 1/6 Holy Fire
+    0x9051,  # Cut 1/6 Holy Fire
+    0xA051,  # Cut 1/6 Ice Fire
+    0xA051,  # Cut 1/6 Ice Fire
+    0xA051,  # Cut 1/6 Ice Fire
+    0xC051,  # Cut 1/6 Lightning Fire
+    0xC051,  # Cut 1/6 Lightning Fire
+    0xC051,  # Cut 1/6 Lightning Fire
+]
+
+enemy_weak_type_list = [
+    0x0020,  # hit
+    0x0040,  # cut
+    0x0080,  # poison
+    0x8000,  # Fire
+    0x2000,  # Ice
+    0x1000,  # Holy
+    0x4000,  # Lightning
+    0x0100,  # Curse
+    0x0200,  # Stone
+    0x0800,  # Dark
+]
+
 
 class DropData:
     def __init__(self, vanilla_drop: str, drop_addresses: list):
