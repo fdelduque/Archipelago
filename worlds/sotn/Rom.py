@@ -1924,10 +1924,12 @@ def start_room_rando(castle_flag: int, world: "SotnWorld", patch: SotnProcedureP
 
     if castle_flag == 1:  # 1st castle only
         while rand_room["stage"] >= 20:
-            rand_room = world.random.choice(start_room_data)
+            rand_room_key = world.random.choice(room_keys)
+            rand_room = start_room_data[rand_room_key]
     elif castle_flag == 2:  # 2nd castle only
         while rand_room["stage"] <= 20:
-            rand_room = world.random.choice(start_room_data)
+            rand_room_key = world.random.choice(room_keys)
+            rand_room = start_room_data[rand_room_key]
 
     # Not sure if this prevents logic breaking for SOTN.IO
     if rand_room["stage"] >= 0x20:
