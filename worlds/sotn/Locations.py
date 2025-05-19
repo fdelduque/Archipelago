@@ -1821,7 +1821,7 @@ locations = {
             "zones": [ZONE["TOP"]],
             "index": 11,
             "entities": [0x244e, 0x29b4],
-            "as_relic": {"y": 0x00be},
+            "as_relic": {},
             "vanilla_item": "Platinum mail",
         },
     "Castle Keep - Attic by Elevator Surround by Torches":
