@@ -5,6 +5,8 @@
 [0.81 changes](https://youtu.be/w-Y_4slbMtA)
 [0.82 changes](https://www.youtube.com/watch?v=F_yL3QM4qYw&t=8s)
 
+[GRAB THE LAST RELEASE HERE](https://github.com/fdelduque/Archipelago/releases)
+
 ## Symphony of the Night
 Symphony of the Night is a metroidvania from playstation 1
 
@@ -14,18 +16,18 @@ Symphony of the Night is a metroidvania from playstation 1
 
 ### Instalation
 Download the last apworld version from releases page.  
-(THIS STEP IS NO LONGER REQUIRED)Download error recalc software .exe for windows platform and no extension for linux platform and place in your 'lib' folder on archipelago main directory. Default is C:\ProgramData\Archipelago\lib  
+(THIS STEP IS NO LONGER REQUIRED)Download error recalc software<br />
 Run ArchipelagoLauncher and choose Install APWorld, select your downloaded sotn.apworld, restart if asked.  
 
 # Playing
 ## Generate
-Place your options file along with all others players yaml in your players folder. You can get an default yaml for SOTN on ArchipelagoLauncher and choose Generate Template Options.  
-Run ArquipelagoGenerate, your seed will be on output directory.  
+Place your options file along with all others players yaml in your players folder. You can get an default yaml for SOTN on ArchipelagoLauncher and choose Generate Template Options.  <br />
+Run ArquipelagoGenerate, your seed will be on output directory.  <br />
 Since this is an unsupported apworld is required to generate locally. You can open the zipped seed to get the patches for all unsuported games SOTN extension is .apsotn. You can send the file to Archipelago website to host.  
 ## Running
-Select Open Patch from ArchipelagoLauncher. PAY ATTENTION TO FILE DIALOG. During the process will be asked for Castlevania - Symphony of the Night (USA) (Track 1).bin or ROM File and Castlevania - Symphony of the Night (USA) (Track 2).bin or Audio File if error recalc software isn't found on lib folder you will be asked for an Error recalc binary during this process. You could be asked for a bizhawk binary also. You might get No handler found during Sony and Playstation logos. Don't forget to enter your server address and click connect after getting Symphony of the Night handler.  
-If you prefer to open manually, run the game with AP_SEED_PLAYER.cue, chooose Bizhawk client from ArchipelagoLauncher, on Bizhawk choose Tools->Lua Console, on Lua console choose Script->Open script and select connector_bizhawk_generic.lua from data\lua directory. Don't forget to enter your server address and click connect after getting Symphony of the Night handler.  
-In the same folder as your .apsotn you will get and AP_SEED_NAME.cue, AP_SEED_NAME.bin and Castlevania - Symphony of the Night (USA) (track 2).bin files.  
+Select Open Patch from ArchipelagoLauncher. PAY ATTENTION TO FILE DIALOG. During the process will be asked for Castlevania - Symphony of the Night (USA) (Track 1).bin or ROM File and Castlevania - Symphony of the Night (USA) (Track 2).bin or Audio File. You could be asked for a bizhawk binary also. You might get No handler found during Sony and Playstation logos. Don't forget to enter your server address and click connect after getting Symphony of the Night handler. <br /> 
+If you prefer to open manually, run the game with AP_SEED_PLAYER.cue, chooose Bizhawk client from ArchipelagoLauncher, on Bizhawk choose Tools->Lua Console, on Lua console choose Script->Open script and select connector_bizhawk_generic.lua from data\lua directory. Don't forget to enter your server address and click connect after getting Symphony of the Night handler.  <br />
+In the same folder as your .apsotn you will get and AP_SEED_NAME.cue, AP_SEED_NAME.bin and Castlevania - Symphony of the Night (USA) (track 2).bin files.  <br />
 # Customize
 You can tweak some option in your default yaml:  
 ## Tweaks
