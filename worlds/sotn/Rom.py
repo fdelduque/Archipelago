@@ -776,7 +776,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     local_relics = {}
     copy1_relics = {}
     enemysanity_items = []
-    dopp10_item = 0
+    dopp10_item = 0xffff
 
     for loc in world.multiworld.get_locations(world.player):
         # Save Jewel of open item
@@ -1137,7 +1137,10 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         # Richter Defeat Dracula   23 bytes left
 
     # WRITE DOPP 10 ITEM on the very end of Defeat Olrox and terminate
-    item_id = dopp10_item
+    if dopp10_item == 0xffff:
+        item_id = dopp10_item
+    else:
+        item_id = dopp10_item["id"]
     patch.write_token(APTokenTypes.WRITE, 0x438d6c4, item_id.to_bytes(2))
     patch.write_token(APTokenTypes.WRITE, 0x438d6c4 - 0x4298798, item_id.to_bytes(2))
     patch.write_token(APTokenTypes.WRITE, 0x438d6c6, (0xff00).to_bytes(2))
@@ -1369,16 +1372,16 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
 
     if options_dict["difficult"] != 1:
         if options_dict["difficult"] == 0:
-            enemy_mod = 50
+            enemy_mod = 50 / 100
             shop_price_min = 50
             shop_price_max = 75
             drop_mod = 3
         elif options_dict["difficult"] == 2:
-            enemy_mod = 150
+            enemy_mod = 150 / 100
             shop_price_min = 100
             shop_price_max = 125
         elif options_dict["difficult"] == 3:
-            enemy_mod = 200
+            enemy_mod = 200 / 100
             shop_price_min = 125
             shop_price_max = 150
 
