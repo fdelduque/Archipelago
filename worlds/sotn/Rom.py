@@ -1783,7 +1783,7 @@ def modify_drop(drop_mod: int, patch: SotnProcedurePatch):
         offset += 0x2c
         patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
 
-        offset = 0x4c871c8  # Underground Caverns
+        offset = 0x4c871b8  # Underground Caverns
         patch.write_token(APTokenTypes.WRITE, offset, nop_line.to_bytes(4, "little"))
         offset += 0x2c
         patch.write_token(APTokenTypes.WRITE, offset, always_drop.to_bytes(4, "little"))
