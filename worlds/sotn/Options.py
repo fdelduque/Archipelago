@@ -207,10 +207,10 @@ class EnemyStats(Toggle):
 
 class RandomShopStock(Choice):
     """Randomize items sold by Librarian
-    random: Any item can appear at shop
-    random_lib: Any item can appear at shop enforcing a Library card on sale
-    random_no_prog: No progression item can appear at shop
-    random_no_prog_lib: No progression item can appear at shop enforcing a Library card on sale"""
+    on: Any item can appear at shop
+    on_lib: Any item can appear at shop and enforcing a Library card on sale
+    on_no_prog: Any item can appear at shop and no progression item will appear
+    on_no_prog_lib: No progression item can appear at shop enforcing a Library card on sale"""
     display_name = "Randomize shop stock"
     option_off = 0
     option_on = 1
