@@ -203,7 +203,8 @@ class SotnWorld(World):
         set_rules(self.multiworld, self.player, self.options)
 
     def fill_slot_data(self) -> Dict[str, Any]:
-        option_names: List[str] = [option_name for option_name in self.options_dataclass.type_hints]
+        option_names: List[str] = [option_name for option_name in self.options_dataclass.type_hints
+                                   if option_name != "plando_items"]
         slot_data = self.options.as_dict(*option_names)
         return slot_data
 
