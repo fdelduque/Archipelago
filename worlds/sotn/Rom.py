@@ -757,7 +757,8 @@ def replace_trio_relic_with_item(opts: dict, patch: SotnProcedurePatch) -> None:
 
 
 def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
-    option_names: List[str] = [option_name for option_name in world.options_dataclass.type_hints]
+    option_names: List[str] = [option_name for option_name in world.options_dataclass.type_hints if
+                               option_name != "plando_items"]
     options_dict = world.options.as_dict(*option_names)
 
     if 'W' in world.multiworld.seed_name:
@@ -2260,29 +2261,30 @@ def enemy_stat_rando(new_mod: float, enemy_stat: bool, world: "SotnWorld", patch
             offset += 1
         patch.write_token(APTokenTypes.WRITE, enemy["nameOffset"], enemy["newNameReference"].to_bytes(4, "little"))
 
-    offset = 0x0f6138
-    normal_names = "0024524143554C41FF0027414C414D4F5448FF00F700214C4CFF00274F4F44002C55434BFF00"
+    if enemy_stat:
+        offset = 0x0f6138
+        normal_names = "0024524143554C41FF0027414C414D4F5448FF00F700214C4CFF00274F4F44002C55434BFF00"
 
-    for i in range(0, len(normal_names), 2):
-        two_chars_str = '0x' + normal_names[i:i+2]
-        two_chars = int(two_chars_str, 16)
-        patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", two_chars))
-        offset += 1
+        for i in range(0, len(normal_names), 2):
+            two_chars_str = '0x' + normal_names[i:i+2]
+            two_chars = int(two_chars_str, 16)
+            patch.write_token(APTokenTypes.WRITE, offset, struct.pack("<B", two_chars))
+            offset += 1
 
-    offset = 0x0b9ca8
-    patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cf4).to_bytes(4, "little"))
+        offset = 0x0b9ca8
+        patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cf4).to_bytes(4, "little"))
 
-    offset = 0x0b6220
-    patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cfb).to_bytes(4, "little"))
+        offset = 0x0b6220
+        patch.write_token(APTokenTypes.WRITE, offset, (0x800e0cfb).to_bytes(4, "little"))
 
-    for address in faerie_scroll_force_addresses:
-        force_on = 0x34020003
-        force_nop = 0x00000000
-        offset = address
+        for address in faerie_scroll_force_addresses:
+            force_on = 0x34020003
+            force_nop = 0x00000000
+            offset = address
 
-        patch.write_token(APTokenTypes.WRITE, offset, force_on.to_bytes(4, "little"))
-        offset += 4
-        patch.write_token(APTokenTypes.WRITE, offset, force_nop.to_bytes(4, "little"))
+            patch.write_token(APTokenTypes.WRITE, offset, force_on.to_bytes(4, "little"))
+            offset += 4
+            patch.write_token(APTokenTypes.WRITE, offset, force_nop.to_bytes(4, "little"))
 
 
 def replace_text_at_index(old_str: str, new_str: str, index: int) -> str:
