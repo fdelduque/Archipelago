@@ -90,7 +90,7 @@ class Difficult(Choice):
 
 class EnemyModifier(Range):
     """Modifier for monster HP, attack and defense, override difficult preset
-    Any number above 100 increase the attribute and bellow decrease"""
+    Any number above 100 increase the attribute and bellow decrease. 24 means OFF"""
     display_name = "Enemy modifier"
     range_start = 24
     range_end = 200
