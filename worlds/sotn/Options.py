@@ -256,6 +256,11 @@ class SkipClockTowerPuzzle(Toggle):
     display_name = "Clock tower puzzle"
 
 
+class NoLogic(Toggle):
+    """There is logic. Seed might be unbeatable. Heavy on glitch knowledge"""
+    display_name = "No logic rules"
+
+
 @dataclass
 class SOTNOptions(PerGameCommonOptions):
     accessibility: ItemsAccessibility
@@ -291,17 +296,23 @@ class SOTNOptions(PerGameCommonOptions):
     reverse_library: ReverseLibraryCard
     random_music: RandomizeMusic
     skip_nz1: SkipClockTowerPuzzle
+    no_logic: NoLogic
 
 
 sotn_option_groups = [
-    OptionGroup("gameplay tweaks", [
-        OpenedNO4NO3, OpenedDAIARE, Extension, RandomizeNonLocations, Enemysanity, EnemyScroll, Difficult,
-        EnemyModifier, DropModifier, RandomStartGear, DeathLink, RandomShopStock
+    OptionGroup("Item Pool", [
+        Extension, Enemysanity, ExtraPool, BossLocations,
+    ]),
+    OptionGroup("Gameplay Tweaks", [
+        OpenedNO4NO3, OpenedDAIARE,  RandomizeNonLocations, EnemyScroll, Difficult, EnemyModifier, DropModifier,
+        RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices, StartingZone,
+        ReverseLibraryCard, NoLogic
     ]),
     OptionGroup("QOL", [
-        InfiniteWing, ExtraPool, BossLocations, RemovePrologue, MapColor, AlucardPalette, AlucardLiner, MagicVessels,
-        AntiFreeze, MyPurse, FastWarp, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices, StartingZone,
-        ReverseLibraryCard, RandomizeMusic, SkipClockTowerPuzzle
+        InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle
+    ]),
+    OptionGroup("Cosmetics", [
+        MapColor, AlucardPalette, AlucardLiner, RandomizeMusic,
     ])
 ]
 
