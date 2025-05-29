@@ -8,8 +8,8 @@ from Options import AssembleOptions
 
 from .Items import SotnItem, items, relic_table, item_id_to_name
 from .Locations import locations, SotnLocation
-from .Regions import create_regions
-from .Rules import set_rules
+from .Regions import create_regions, create_regions_no_logic
+from .Rules import set_rules, set_no_logic_rules
 from .Options import SOTNOptions, sotn_option_groups
 from .Rom import SotnProcedurePatch, write_tokens
 from .client import SotNClient
@@ -194,13 +194,19 @@ class SotnWorld(World):
         return SotnItem(rng_junk, data["classification"], data["id"], self.player)
 
     def create_regions(self) -> None:
-        create_regions(self.multiworld, self.player, self.options)
+        if self.options.no_logic.value:
+            create_regions_no_logic(self.multiworld, self.player, self.options)
+        else:
+            create_regions(self.multiworld, self.player, self.options)
 
     def create_event(self, name: str) -> Item:
         return SotnItem(name, ItemClassification.progression, None, self.player)
 
     def set_rules(self):
-        set_rules(self.multiworld, self.player, self.options)
+        if self.options.no_logic.value:
+            set_no_logic_rules(self.multiworld, self.player, self.options)
+        else:
+            set_rules(self.multiworld, self.player, self.options)
 
     def fill_slot_data(self) -> Dict[str, Any]:
         option_names: List[str] = [option_name for option_name in self.options_dataclass.type_hints
