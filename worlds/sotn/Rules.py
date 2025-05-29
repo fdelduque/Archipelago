@@ -49,6 +49,53 @@ def sotn_has_spike(state: CollectionState, player: int) -> bool:
             (state.has("Spike breaker", player) and sotn_has_any(state, player)))
 
 
+def set_no_logic_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
+    boss_locations = options.boss_locations.value
+    extension = options.item_pool.value
+
+    # Forbid relics on boss drop
+    if boss_locations:
+        for loc in ["NZ0_Life Vessel_boss", "NO1_Life Vessel_boss", "LIB_Life Vessel_boss", "NZ1_Life Vessel_boss",
+                    "DAI_Life Vessel_boss", "ARE_Life Vessel_boss", "NO2_Life Vessel_boss", "NO4_Life Vessel_boss",
+                    "CHI_Life Vessel_boss", "CAT_Life Vessel_boss", "RNO4_Life Vessel_boss", "RCAT_Life Vessel_boss",
+                    "RNZ0_Life Vessel_boss"]:
+            location = world.get_location(ABREV_TO_LOCATION[loc], player)
+            for r in RELIC_NAMES:
+                forbid_item(location, r, player)
+
+    # Player might break TOP_Turkey_1 with spell and miss the loot, forbid progression items
+    if ABREV_TO_LOCATION["TOP_Turkey_1"] in EXTENSIONS[extension]:
+        location = world.get_location(ABREV_TO_LOCATION["TOP_Turkey_1"], player)
+        for k in progression_items.keys():
+            forbid_item(location, k, player)
+
+    # Vessels can be on gold ring, but cause some weird visual glitches
+    location = world.get_location(ABREV_TO_LOCATION["NO4_Gold ring_10"], player)
+    forbid_item(location, "Heart Vessel", player)
+    forbid_item(location, "Life Vessel", player)
+
+    # Forbid vessels on no_offset locations and chi turkey, Vlad relics, Jewel of open, Trio and holy glasses
+    for loc in ["Heart of vlad", "Tooth of vlad", "Rib of vlad", "Ring of vlad", "Eye of vlad", "Jewel of open",
+                "NO1_Pot roast_77699032", "NO3_Pot roast_79337332", "NO3_Turkey_79340208", "NZ1_Bwaka knife_89601956",
+                "NZ1_Pot roast_89601948", "NZ1_Shuriken_89601952", "NZ1_TNT_89601960", "RNO1_Dim sum set_84398220",
+                "RNO3_Pot roast_85880396", "RNZ1_Bwaka knife_94094164", "RNZ1_Pot roast_94094156", "RARE_Life Vessel_8",
+                "RNZ1_Shuriken_94094160", "RNZ1_TNT_94094168", "CHI_Turkey_73307650", "CEN_Holy glasses_72803176"]:
+        if loc in EXTENSIONS[extension]:
+            location = world.get_location(ABREV_TO_LOCATION[loc], player)
+            forbid_item(location, "Heart Vessel", player)
+            forbid_item(location, "Life Vessel", player)
+
+    # Forbid relics on no_offset locations, chi turkey
+    for loc in ["NO1_Pot roast_77699032", "NO3_Pot roast_79337332", "NO3_Turkey_79340208", "NZ1_Bwaka knife_89601956",
+                "NZ1_Pot roast_89601948", "NZ1_Shuriken_89601952", "NZ1_TNT_89601960", "RNO1_Dim sum set_84398220",
+                "RNO3_Pot roast_85880396", "RNZ1_Bwaka knife_94094164", "RNZ1_Pot roast_94094156",
+                "RNZ1_Shuriken_94094160", "RNZ1_TNT_94094168", "CHI_Turkey_73307650"]:
+        if loc in EXTENSIONS[extension]:
+            location = world.get_location(ABREV_TO_LOCATION[loc], player)
+            for r in RELIC_NAMES:
+                forbid_item(location, r, player)
+
+
 def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     open_are = options.open_are.value
     open_no4 = options.open_no4.value
