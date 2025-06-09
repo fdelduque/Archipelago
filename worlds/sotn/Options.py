@@ -261,6 +261,18 @@ class NoLogic(Toggle):
     display_name = "No logic rules"
 
 
+class AutoHeal(Toggle):
+    """
+        Entering a save room heal Alucard
+    """
+    display_name = "Heal when enter a save room"
+
+
+class ColorRandomizer(Toggle):
+    """Randomize various color paletter. Ex: Cape colors, gravity boots trail, hydrostorm"""
+    display_name = "Color randomizer"
+
+
 @dataclass
 class SOTNOptions(PerGameCommonOptions):
     accessibility: ItemsAccessibility
@@ -297,6 +309,8 @@ class SOTNOptions(PerGameCommonOptions):
     random_music: RandomizeMusic
     skip_nz1: SkipClockTowerPuzzle
     no_logic: NoLogic
+    auto_heal: AutoHeal
+    color_randomizer: ColorRandomizer
 
 
 sotn_option_groups = [
@@ -309,10 +323,10 @@ sotn_option_groups = [
         ReverseLibraryCard, NoLogic
     ]),
     OptionGroup("QOL", [
-        InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle
+        InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle, AutoHeal
     ]),
     OptionGroup("Cosmetics", [
-        MapColor, AlucardPalette, AlucardLiner, RandomizeMusic,
+        MapColor, AlucardPalette, AlucardLiner, RandomizeMusic, ColorRandomizer
     ])
 ]
 
