@@ -189,6 +189,8 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     # Relic rules not bound by region
     location = world.get_location(ABREV_TO_LOCATION["Soul of bat"], player)
     set_rule(location, lambda state: state.has("Form of mist", player) and sotn_has_any(state, player))
+    location = world.get_location(ABREV_TO_LOCATION["Fire of bat"], player)
+    set_rule(location, lambda state: sotn_has_flying(state, player))
     location = world.get_location(ABREV_TO_LOCATION["Echo of bat"], player)
     add_rule(location, lambda state: sotn_has_flying(state, player) and sotn_has_transformation(state, player))
     location = world.get_location(ABREV_TO_LOCATION["Power of wolf"], player)
