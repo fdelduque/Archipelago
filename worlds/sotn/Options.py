@@ -273,6 +273,17 @@ class ColorRandomizer(Toggle):
     display_name = "Color randomizer"
 
 
+class RandomizeDrop(Choice):
+    """Randomize enemy drops
+    simple: Only randomize between each enemy drop
+    simple_global: Only randomize between each enemy drop including global drops"""
+    option_off = 0
+    option_simple = 1
+    option_simple_global = 2
+    default = 0
+    display_name = "Randomize enemy drops"
+
+
 @dataclass
 class SOTNOptions(PerGameCommonOptions):
     accessibility: ItemsAccessibility
@@ -311,6 +322,7 @@ class SOTNOptions(PerGameCommonOptions):
     no_logic: NoLogic
     auto_heal: AutoHeal
     color_randomizer: ColorRandomizer
+    randomize_drop: RandomizeDrop
 
 
 sotn_option_groups = [
@@ -319,8 +331,8 @@ sotn_option_groups = [
     ]),
     OptionGroup("Gameplay Tweaks", [
         OpenedNO4NO3, OpenedDAIARE,  RandomizeNonLocations, EnemyScroll, Difficult, EnemyModifier, DropModifier,
-        RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices, StartingZone,
-        ReverseLibraryCard, NoLogic
+        RandomizeDrop, RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices,
+        StartingZone, ReverseLibraryCard, NoLogic
     ]),
     OptionGroup("QOL", [
         InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle, AutoHeal
