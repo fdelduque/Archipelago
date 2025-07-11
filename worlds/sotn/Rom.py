@@ -16,6 +16,8 @@ from .Locations import locations
 from .Enemies import enemy_dict, enemy_stats_list, enemy_atk_type_list, enemy_weak_type_list
 from .data.Constants import (RELIC_NAMES, SLOT, slots, equip_id_offset, equip_inv_id_offset, CURRENT_VERSION,
                              faerie_scroll_force_addresses, shop_item_data, start_room_data, music, music_by_area)
+from .data.io_items import io_items, tile_filter, io_item_name
+
 
 from .data.Zones import zones, ZONE
 import hashlib
@@ -1462,6 +1464,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     if options_dict["random_music"]:
         randomize_music(world, patch)
 
+    # Thanks DerDrach to point me where to find those on SOTN.IO
     if options_dict["color_randomizer"]:
         randomize_cape_colors(world, patch)
         randomize_grav_boot_colors(world, patch)
@@ -1473,6 +1476,9 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
 
     if options_dict["skip_nz1"]:
         disable_nz1_puzzle(patch)
+
+    if options_dict["randomize_drop"]:
+        randomize_drop(options_dict["randomize_drop"], world, patch)
 
     apply_acessibility_patches(patch)
     rando_func_master(0, patch)
@@ -3246,6 +3252,36 @@ def surprise_patches(patch: SotnProcedurePatch):
             offset += 0x140
         else:
             offset += 0x10
+
+
+def randomize_drop(option: int, world: "SotnWorld", patch: SotnProcedurePatch):
+    if option == 1 or option == 2:
+        items = tile_filter(io_items, ["enemy"])
+        dropped_items = []
+        # Collect every drop
+        for item in items:
+            for tile in item["tiles"]:
+                if option == 1 and tile["enemy"] == "GLOBAL_DROP":
+                    continue
+
+                total = len(tile["addresses"])
+                for _ in range(total):
+                    dropped_items.append(item["name"])
+        # Randomize the drops
+        world.random.shuffle(dropped_items)
+        # Write on the ROM
+        for item in items:
+            for tile in item["tiles"]:
+                if option == 1 and tile["enemy"] == "GLOBAL_DROP":
+                    continue
+
+                for address in tile["addresses"]:
+                    tile_options = {}
+                    if "noOffset" in tile:
+                        tile_options = {"no_offset": True}
+                    new_drop = io_item_name[dropped_items.pop()]
+                    new_tile = tile_value(new_drop, tile_options)
+                    patch.write_token(APTokenTypes.WRITE, address, new_tile.to_bytes(2, "little"))
 
 
 def get_base_rom_bytes(audio: bool = False) -> bytes:
