@@ -410,6 +410,10 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     if "RNO0_Meal ticket_9" in EXTENSIONS[extension]:
         location = world.get_location(ABREV_TO_LOCATION["RNO0_Meal ticket_9"], player)
         add_rule(location, lambda state: state.has("Jewel of open", player))
+    if "RNO0_Heart refresh_11" in EXTENSIONS[extension]:
+        location = world.get_location(ABREV_TO_LOCATION["RNO0_Heart refresh_11"], player)
+        for relic in ["Heart of vlad", "Tooth of vlad", "Rib of vlad", "Ring of vlad", "Eye of vlad"]:
+            add_rule(location, lambda state: state.has(relic, player))
 
     # RNO1 - Reverse Outer Wall
     loc_pool = []
