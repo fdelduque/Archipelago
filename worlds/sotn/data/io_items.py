@@ -9557,10 +9557,18 @@ io_item_name = {tile["name"]: {"type": tile["type"], "id": tile["id"]} for tile 
 if __name__ == "__main__":
     test = tile_filter(io_items, ["enemy", "librarian"])
 
-    subweapons = type_filter(test, ["SUBWEAPON"])
+    subweapons = type_filter(test, ["HEART"])
 
     weapon_test = get_duplicate_equipment()
 
     heart = io_item_name["Resist fire"]
+
+    for item in io_items:
+        if "tiles" in item:
+            for tile in item["tiles"]:
+                if "zones" in tile:
+                    zone_size = len(tile["zones"])
+                    if zone_size > 1:
+                        print(tile)
 
     print("a")
