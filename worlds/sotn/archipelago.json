@@ -1,6 +1,8 @@
 { 
   "game": "Symphony of the Night",
-  "world_version": "0.813",
+  "world_version": "0.8.16",
   "authors": ["fdelduque"],
-  "minimum_ap_version": "0.6.0"
+  "minimum_ap_version": "0.6.0",
+  "compatible_version": 6,
+  "build_version": 6
 }
