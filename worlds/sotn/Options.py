@@ -276,12 +276,41 @@ class ColorRandomizer(Toggle):
 class RandomizeDrop(Choice):
     """Randomize enemy drops
     simple: Only randomize between each enemy drop
-    simple_global: Only randomize between each enemy drop including global drops"""
+    simple_global: Only randomize between each enemy drop including global drops
+    type: Randomize within the same item type
+    type_global: Randomize within the same item type including global drops
+    type_progression: Randomize within the same item type and have a chance on progression items
+    type_progression_global: Randomize within the same item type and include global drops having a chance on progression items
+    full: Every drop is random
+    full_global: Every drop is random including global drops
+    full_progression: Every drop is random and have a chance on progression items
+    full_progression_global: Every drop is random and include global drops having a chance on progression items"""
     option_off = 0
     option_simple = 1
     option_simple_global = 2
+    option_type = 3
+    option_type_global = 4
+    option_type_progression = 5
+    option_type_progression_global = 6
+    option_full = 7
+    option_full_global = 8
+    option_full_progression = 9
+    option_full_progression_global = 10
     default = 0
     display_name = "Randomize enemy drops"
+
+
+class RandomizeCandles(Choice):
+    """Randomize candles. Vanilla candles with Stopwatch are not randomized
+    simple: Only randomize between each candle
+    type: Randomize keeping the same item type
+    random: Full randomized items
+    random_progression: Full randomized include chance of progression items"""
+    option_off = 0
+    option_simple = 1
+    option_type = 2
+    option_full = 3
+    option_full_progression = 4
 
 
 @dataclass
@@ -323,6 +352,7 @@ class SOTNOptions(PerGameCommonOptions):
     auto_heal: AutoHeal
     color_randomizer: ColorRandomizer
     randomize_drop: RandomizeDrop
+    randomize_candles: RandomizeCandles
 
 
 sotn_option_groups = [
@@ -331,8 +361,8 @@ sotn_option_groups = [
     ]),
     OptionGroup("Gameplay Tweaks", [
         OpenedNO4NO3, OpenedDAIARE,  RandomizeNonLocations, EnemyScroll, Difficult, EnemyModifier, DropModifier,
-        RandomizeDrop, RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise, EnemyStats, ShopPrices,
-        StartingZone, ReverseLibraryCard, NoLogic
+        RandomizeDrop, RandomizeCandles, RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise,
+        EnemyStats, ShopPrices, StartingZone, ReverseLibraryCard, NoLogic
     ]),
     OptionGroup("QOL", [
         InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle, AutoHeal
