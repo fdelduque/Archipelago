@@ -93,7 +93,7 @@ class RaftWorld(World):
             dupeItemPool = list(dupeItemPool)
             # Finally, add items as necessary
             for item in dupeItemPool:
-                self.extraItemNamePool.append(self.replace_item_name_as_necessary(item))
+                self.extraItemNamePool.append(self.replace_item_name_as_necessary(item["name"]))
             
         assert self.extraItemNamePool, f"Don't know what extra items to create for {self.player_name}."
 
@@ -236,8 +236,8 @@ class RaftWorld(World):
             "DeathLink": bool(self.options.death_link)
         }
 
-def create_region(world: MultiWorld, player: int, name: str, locations=None, exits=None):
-    ret = Region(name, player, world)
+def create_region(multiworld: MultiWorld, player: int, name: str, locations=None, exits=None):
+    ret = Region(name, player, multiworld)
     if locations:
         for location in locations:
             loc_id = locations_lookup_name_to_id.get(location, 0)
