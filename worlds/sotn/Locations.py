@@ -1203,7 +1203,7 @@ locations = {
             "tile_id": True,
             "vanilla_item": "Gold ring",
         },
-    "Underground Caverns - Breakable Wall Close to Stairway":
+    "Underground Caverns - Room Behind Breakable Wall Close to Stairway":
         {
             "ap_id": 131,
             "zones": [ZONE["NO4"]],
