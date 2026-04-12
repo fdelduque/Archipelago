@@ -16,10 +16,9 @@ from .Locations import locations
 from .Enemies import enemy_dict, enemy_stats_list, enemy_atk_type_list, enemy_weak_type_list
 from .data.Constants import (RELIC_NAMES, SLOT, slots, equip_id_offset, equip_inv_id_offset, CURRENT_VERSION,
                              faerie_scroll_force_addresses, shop_item_data, start_room_data, music, music_by_area)
-from .data.io_items import io_items, tile_filter, io_item_name
-
-
+from .data.io_items import io_items, tile_filter, type_filter, io_item_name
 from .data.Zones import zones, ZONE
+
 import hashlib
 import os
 import subprocess
@@ -232,9 +231,11 @@ def tile_value(item: dict, tile: dict) -> int:
             item_id += equip_id_offset
     else:
         if item["type"] == "RELIC":
-            item_id -= 300
+            if item_id >= 300:
+                item_id -= 300
         elif item["type"] == "POWERUP":
-            item_id -= 400
+            if item_id >= 400:
+                item_id -= 400
         elif item["type"] not in ["HEART", "GOLD", "SUBWEAPON"]:
             item_id += tile_id_offset
 
@@ -1475,10 +1476,13 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         randomize_maria_color(world, patch)
 
     if options_dict["skip_nz1"]:
-        disable_nz1_puzzle(patch)
+        single_hit_gears(patch)
 
     if options_dict["randomize_drop"]:
         randomize_drop(options_dict["randomize_drop"], world, patch)
+
+    if options_dict["randomize_candles"]:
+        randomize_candles(options_dict["randomize_candles"], world, patch)
 
     apply_acessibility_patches(patch)
     rando_func_master(0, patch)
@@ -1791,11 +1795,39 @@ def randomize_maria_color(world: "SotnWorld", patch: SotnProcedurePatch):
         offset += 2
 
 
-def disable_nz1_puzzle(patch: SotnProcedurePatch):
+def single_hit_gears(patch: SotnProcedurePatch):
     # Clock tower puzzle 180fd0 = 0f Change 1a8a64: and r3, r5 to 3403000f mov r3, 0x0f @ROM 0x055a0f4c
     # Reverse clock tower puzzle 180f6c = 0f Change 1a8350: and r2, r3 to 3402000f mov r2, 0x0f @ ROM 0x059e928
-    patch.write_token(APTokenTypes.WRITE, 0x055a0f4c, (0x3403000f).to_bytes(4, "little"))
-    patch.write_token(APTokenTypes.WRITE, 0x059e9328, (0x3402000f).to_bytes(4, "little"))
+    # patch.write_token(APTokenTypes.WRITE, 0x055a0f4c, (0x3403000f).to_bytes(4, "little"))
+    # patch.write_token(APTokenTypes.WRITE, 0x059e9328, (0x3402000f).to_bytes(4, "little"))
+    # Single-Hit Gears name seens better Forat-Negre version is way superior than mine. TYVM
+    # TODO: Change option name on the future
+    # First Castle Gear Puzzle - Code by Forat Negre; added by eldri7ch
+    offset = 0x055A0F04
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2403000f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa4230fd0).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0c06d6f8).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040676).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0806a29c).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
+    # Second Castle Gear Puzzle - Code by Forat Negre; added by eldri7ch
+    offset = 0x059E92D8
+    patch.write_token(APTokenTypes.WRITE, offset, (0x2403000f).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0xa4230f6c).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0c04d1fe).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x34040676).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x0806a0d9).to_bytes(4, "little"))
+    offset += 4
+    patch.write_token(APTokenTypes.WRITE, offset, (0x00000000).to_bytes(4, "little"))
 
 
 def randomize_music(world: "SotnWorld", patch: SotnProcedurePatch):
@@ -3255,33 +3287,170 @@ def surprise_patches(patch: SotnProcedurePatch):
 
 
 def randomize_drop(option: int, world: "SotnWorld", patch: SotnProcedurePatch):
+    items = tile_filter(io_items, ["enemy"])
+    dropped_items = []
+    rng_drop = []
+    global_drops = True
+    exclude_progression = True
+    if option in (1, 3, 5, 7, 9):
+        global_drops = False
+    if option in (5, 6, 9, 10):
+        exclude_progression = False
+
+    # Collect every drop
+    for item in items:
+        for tile in item["tiles"]:
+            if tile["enemy"] == "GLOBAL_DROP" and not global_drops:
+                continue
+
+            total = len(tile["addresses"])
+            for _ in range(total):
+                dropped_items.append(item["name"])
+
     if option == 1 or option == 2:
-        items = tile_filter(io_items, ["enemy"])
-        dropped_items = []
-        # Collect every drop
-        for item in items:
-            for tile in item["tiles"]:
-                if option == 1 and tile["enemy"] == "GLOBAL_DROP":
-                    continue
-
-                total = len(tile["addresses"])
-                for _ in range(total):
-                    dropped_items.append(item["name"])
         # Randomize the drops
-        world.random.shuffle(dropped_items)
-        # Write on the ROM
-        for item in items:
-            for tile in item["tiles"]:
-                if option == 1 and tile["enemy"] == "GLOBAL_DROP":
-                    continue
+        rng_drop = dropped_items[:]
+        world.random.shuffle(rng_drop)
+    elif 3 <= option <= 6:
+        # Randomize the drops
+        rng_drop = []
+        added_drops = {}
+        for drop in dropped_items:
+            item_type = []
+            old_drop = io_item_name[drop]
+            item_type.append(old_drop["type"])
+            type_drops = type_filter(io_items, item_type)
+            tries = 0
+            while tries < 5:
+                while True:
+                    rng_type_drop = world.random.choice(type_drops)
+                    if exclude_progression:
+                        if rng_type_drop["name"] not in ["Spike breaker", "Holy glasses", "Silver ring", "Gold ring"]:
+                            break
+                    else:
+                        break
 
-                for address in tile["addresses"]:
-                    tile_options = {}
-                    if "noOffset" in tile:
-                        tile_options = {"no_offset": True}
-                    new_drop = io_item_name[dropped_items.pop()]
-                    new_tile = tile_value(new_drop, tile_options)
-                    patch.write_token(APTokenTypes.WRITE, address, new_tile.to_bytes(2, "little"))
+                # try to not duplicate items except for Heart and Powerups
+                if rng_type_drop["type"] in ["HEART", "POWERUP"]:
+                    rng_drop.append(rng_type_drop["name"])
+                    break
+
+                if rng_type_drop["name"] in added_drops:
+                    if tries <= 4:
+                        tries += 1
+                        continue
+
+                    total_drops = added_drops[rng_type_drop["name"]]
+                    added_drops[rng_type_drop["name"]] = total_drops + 1
+                    break
+                else:
+                    added_drops[rng_type_drop["name"]] = 1
+                    break
+            rng_drop.append(rng_type_drop["name"])
+    elif 7 <= option <= 10:
+        possible_drops = list(io_item_name.keys())
+        for _ in range(len(dropped_items)):
+            while True:
+                new_drop = world.random.choice(possible_drops)
+                if exclude_progression:
+                    if new_drop not in ["Spike breaker", "Holy glasses", "Silver ring", "Gold ring"]:
+                        break
+                    continue
+                break
+            rng_drop.append(new_drop)
+
+    # Write on the ROM
+    for item in items:
+        for tile in item["tiles"]:
+            if tile["enemy"] == "GLOBAL_DROP" and not global_drops:
+                continue
+
+            for address in tile["addresses"]:
+                tile_options = {}
+                if "noOffset" in tile:
+                    tile_options = {"no_offset": True}
+                new_drop = io_item_name[rng_drop.pop()]
+                new_tile = tile_value(new_drop, tile_options)
+                patch.write_token(APTokenTypes.WRITE, address, new_tile.to_bytes(2, "little"))
+
+
+def randomize_candles(option: int, world: "SotnWorld", patch: SotnProcedurePatch):
+    items = tile_filter(io_items, ["candle"])
+    dropped_items = []
+    rng_drop = []
+    exclude_progression = True
+    if option in (5, 6, 9, 10):
+        exclude_progression = False
+
+    # Collect every drop excluding Stopwatch
+    for item in items:
+        if item["name"] == "Stopwatch":
+            continue
+        for tile in item["tiles"]:
+            if tile["zones"][0] == "ST0":
+                continue
+
+            if "candle" in tile:
+                dropped_items.append(item["name"])
+
+    if option == 1:
+        # Randomize the drops
+        rng_drop = dropped_items[:]
+        world.random.shuffle(rng_drop)
+    elif option == 2:
+        for drop in dropped_items:
+            if drop in ["Heart", "Big heart"]:
+                rng_drop.append(world.random.choice(["Heart", "Big heart"]))
+            elif drop in ["$1", "$25", "$50", "$100", "$250", "$400", "$700", "$1000", "$2000", "$5000"]:
+                gold_type = type_filter(io_items, ["GOLD"])
+                gold_names = [item["name"] for item in gold_type]
+                rng_drop.append(world.random.choice(gold_names))
+            elif drop in ["Dagger", "Axe", "Cross", "Holy Water", "Bible", "Rebound Stone", "Vibhuti", "Agunea"]:
+                subweapon_type = type_filter(io_items, ["SUBWEAPON"])
+                subweapon_names = [item["name"] for item in subweapon_type]
+                rng_drop.append(world.random.choice(subweapon_names))
+            elif drop == "Uncurse":
+                usable_type = type_filter(io_items, ["USABLE"])
+                usable_names = [item["name"] for item in usable_type]
+                rng_drop.append(world.random.choice(usable_names))
+        rng_drop = rng_drop[::-1]
+    elif option == 3 or option == 4:
+        all_type = type_filter(io_items, ["HEART", "GOLD", "SUBWEAPON", "POWERUP", "WEAPON1", "WEAPON2", "SHIELD",
+                                          "HELMET", "ARMOR", "CLOAK", "ACCESSORY", "USABLE"])
+        all_names = [item["name"] for item in all_type]
+
+        if option == 3:
+            progression_items = ["Spike breaker", "Holy glasses", "Gold ring", "Silver ring"]
+            for item in progression_items:
+                all_names.remove(item)
+
+        common_drops = ["Heart", "Big heart", "$1", "$25", "$50", "$100", "$250", "$400", "$700", "$1000", "$2000",
+                        "$5000"]
+        added_drops = []
+        for drop in dropped_items:
+            new_drop = world.random.choice(all_names)
+            rng_drop.append(world.random.choice(all_names))
+
+    # Write on the ROM
+    for item in items:
+        if item["name"] == "Stopwatch":
+            continue
+
+        for tile in item["tiles"]:
+            if "candle" not in tile or tile["zones"][0] == "ST0":
+                continue
+
+            new_drop = io_item_name[rng_drop.pop()]
+            new_tile = (tile["candle"] << 8) | new_drop["id"]
+            if new_drop["type"] not in ["HEART", "GOLD", "SUBWEAPON", "POWERUP"]:
+                new_tile += tile_id_offset
+
+            for i, entity in enumerate(tile["entities"]):
+                if i >= 2:
+                    address = rom_offset(zones[ZONE[tile["zones"][1]]], entity + 0x08)
+                else:
+                    address = rom_offset(zones[ZONE[tile["zones"][0]]], entity + 0x08)
+                patch.write_token(APTokenTypes.WRITE, address, new_tile.to_bytes(2, "little"))
 
 
 def get_base_rom_bytes(audio: bool = False) -> bytes:
