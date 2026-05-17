@@ -3420,7 +3420,7 @@ def randomize_candles(option: int, world: "SotnWorld", patch: SotnProcedurePatch
         all_names = [item["name"] for item in all_type]
 
         if option == 3:
-            progression_items = ["Spike breaker", "Holy glasses", "Gold ring", "Silver ring"]
+            progression_items = ["Spike Breaker", "Holy glasses", "Gold Ring", "Silver Ring"]
             for item in progression_items:
                 all_names.remove(item)
 
