@@ -103,6 +103,7 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
     boss_locations = options.boss_locations.value
     enemysanity = options.enemysanity.value
     fs_enemysanity = options.enemy_scroll.value
+    chairsanity = options.chairsanity.value
 
     location = world.get_location("Reverse Center Cube - Kill Dracula", player)
     set_rule(location, lambda state: sotn_has_dracula(state, player))
@@ -152,6 +153,19 @@ def set_rules(world: MultiWorld, player: int, options: SOTNOptions) -> None:
             for loc in ENEMY_LOCATIONS.keys():
                 enemy = world.get_location(loc, player)
                 add_rule(enemy, lambda state: state.has("Faerie scroll", player))
+
+    # Add rules for chair not region bound
+    if chairsanity:
+        chair = world.get_location("Chairsanity - Library Study Left Chair", player)
+        add_rule(chair, lambda state: sotn_has_any(state, player))
+        chair = world.get_location("Chairsanity - Library Study Right Chair", player)
+        add_rule(chair, lambda state: sotn_has_any(state, player))
+        chair = world.get_location("Chairsanity - Silver Ring Room Left Chair", player)
+        add_rule(chair, lambda state: (state.has("Form of mist", player) and state.has("Jewel of open", player) and
+                                       state.has("Spike breaker", player)))
+        chair = world.get_location("Chairsanity - Silver Ring Room Right Chair", player)
+        add_rule(chair, lambda state: (state.has("Form of mist", player) and state.has("Jewel of open", player) and
+                                       state.has("Spike breaker", player)))
 
     # Player might break TOP_Turkey_1 with spell and miss the loot, forbid progression items
     if ABREV_TO_LOCATION["TOP_Turkey_1"] in EXTENSIONS[extension]:
