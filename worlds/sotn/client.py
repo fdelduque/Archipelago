@@ -8,10 +8,11 @@ from NetUtils import ClientStatus
 from Utils import messagebox
 
 from .Items import items, id_to_item, item_id_to_name
-from .Rom import bytes_as_items
+from .Rom import bytes_as_items, bytes_as_trap
 from .data.Zones import zones, AREA_FLAG_TO_ZONE
 from .data.Constants import RELIC_NAMES
 from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
+from .Traps import restore_ram, TrapData, apply_trap
 
 # TODO:
 #  Visual glitches on Richter dialog
@@ -23,8 +24,8 @@ from .Locations import ZONE_LOCATIONS, locations, AP_ID_TO_NAME, ENEMY_LOCATIONS
 
 # Ideas:
 # Lock red doors for progression
-# Chairsanity
-# # No-logic rules
+# Chairsanity - 0x7342e {Character Sprite} - Sit 0x00df
+
 
 if TYPE_CHECKING:
     from worlds._bizhawk.context import BizHawkClientContext
@@ -34,7 +35,10 @@ else:
 logger = logging.getLogger("Client")
 
 ITEM_SAVE = 0x03bf04
-
+TRAP_SAVE = 0x03bf21
+BOOST_SAVE = 0x03bf22
+TRAP_OFF_SAVE = 0x03bf23
+BOOST_OFF_SAVE = 0x03bf24
 
 class SotNClient(BizHawkClient):
     game = "Symphony of the Night"
@@ -51,6 +55,7 @@ class SotNClient(BizHawkClient):
         self.load_once = False
         self.break_chi_wall = False
         self.last_item_received = 0
+        self.last_enemysanity = 0
         self.new_items = []
         self.received_relics = []
         self.relic_placement = []
@@ -60,7 +65,9 @@ class SotNClient(BizHawkClient):
         self.message_queue = []
         self.received_queue = []
         self.seed_options = {}
+        self.sanity_option = {}
         self.enemysanity_items = {}
+        self.chairsanity_items = {}
         self.enemy_scroll = "OFF"
         self.seed_checked = "NO"
         self.died = False
@@ -70,6 +77,27 @@ class SotNClient(BizHawkClient):
         self.died_zone = {}
         self.at_librarian = False
         self.watching_tactics = False
+        self.last_trap_processed = 0
+        self.last_off_trap = 0
+        self.last_boost_processed = 0
+        self.last_off_boost = 0
+        self.traps = []
+        self.off_traps = []
+        self.traps_dict = {}
+        self.boosts = {}
+        self.off_boost = {}
+        self.total_local_boost = 0
+        self.total_local_traps = 0
+        self.paused_trap = False
+        self.already_active_trap = []
+        self.paused_trap = False
+        self.at_richter = False
+        self.ice_paused = []
+        self.hp_backup = b'\x00'
+        self.equip_backup = b'\x00'
+        self.hand_backup = b'\x00'
+        self.shield_backup = b'\x00'
+        self.applied_axe = 0
 
     async def validate_rom(self, ctx: "BizHawkClientContext") -> bool:
         try:
@@ -100,7 +128,7 @@ class SotNClient(BizHawkClient):
                         ctx.want_slot_data = True
                         ctx.command_processor.commands["missing"] = cmd_missing
                         await self.read_options(ctx)
-                        if self.seed_options["sanity"] & (1 << 7):
+                        if "death_link" in self.sanity_option and self.sanity_option["death_link"]:
                             # Death link enable
                             await ctx.update_death_link(True)
                             pass
@@ -187,13 +215,26 @@ class SotNClient(BizHawkClient):
                     self.received_death = False
                     self.died_zone = {}
                     self.seed_checked = "NO"
+                    self.already_active_trap = []
+                    self.traps = []
+                    self.off_traps = []
+                    self.boosts = {}
+                    self.off_boost = {}
+                    await restore_ram(ctx, "Fall damage")
+                    await restore_ram(ctx, "Ice floor")
+                    await restore_ram(ctx, "Axe Menu")
 
                 if self.cur_zone and entered_cutscene == b'\x01':
                     if not self.load_once:
                         self.load_once = True
                         self.checked_locations = []
-                        self.checked_locations.extend(list(ctx.checked_locations))
-                        self.sent_checked_locations = self.checked_locations[:]
+                        self.checked_locations = list(ctx.checked_locations)
+                        self.sent_checked_locations = self.checked_locations.copy()
+                        self.last_trap_processed = await self.read_int(ctx, TRAP_SAVE, 1, "MainRAM")
+                        self.last_boost_processed = await self.read_int(ctx, BOOST_SAVE, 1, "MainRAM")
+                        await restore_ram(ctx, "Fall damage")
+                        await restore_ram(ctx, "Ice floor")
+                        await restore_ram(ctx, "Axe menu")
                         await self.populate_once(ctx)
                         # Death link starts populate???
                         self.last_death_link = ctx.last_death_link
@@ -264,7 +305,13 @@ class SotNClient(BizHawkClient):
                             if zone_value == 0:
                                 # We really died
                                 self.dead = True
-                                if self.seed_options["sanity"] & (1 << 7):
+                                self.traps = []
+                                self.off_traps = []
+                                self.already_active_trap = []
+                                await restore_ram(ctx, "Fall damage")
+                                await restore_ram(ctx, "Ice floor")
+                                await restore_ram(ctx, "Axe menu")
+                                if "death_link" in self.sanity_option and self.sanity_option["death_link"]:
                                     # Send death if the cause wasn't a death_link
                                     if not self.received_death:
                                         await ctx.send_death("Alucard is not strong enough")
@@ -272,6 +319,31 @@ class SotNClient(BizHawkClient):
                                     else:
                                         # We just died from a death_link? Death scene is handled outside
                                         pass
+
+                    # Pause traps to avoid soft-lock
+                    trap_on = 0
+                    if "trap" in self.sanity_option and self.sanity_option["trap"]:
+                        trap_on = 1
+
+                    if self.cur_zone != self.last_zone and trap_on:
+                        # We are on Richter fight?
+                        if not self.at_richter and self.cur_zone["name"] == "Richter":
+                            self.at_richter = True
+
+                        if self.cur_zone["name"] == "Castle Keep" and self.at_richter:
+                            # At Castle Keep after Richter fight
+                            if "Ice floor" in self.already_active_trap and not self.paused_trap:
+                                self.paused_trap = True
+                                now = await self.elapse_time(ctx)
+                                self.ice_paused.append(now)
+                                await restore_ram(ctx, "Ice floor")
+
+                        if self.paused_trap and self.cur_zone["name"] == "Reverse Castle Keep":
+                            # We just zoned and have a paused trap
+                            self.paused_trap = False
+                            now = await self.elapse_time(ctx)
+                            self.ice_paused.append(now)
+                            await apply_trap(ctx, "Ice floor 5")
 
                     # Process items
                     try:
@@ -330,6 +402,9 @@ class SotNClient(BizHawkClient):
                         if self.new_items:
                             await self.sort_inventory(ctx)
                             self.new_items = []
+                        if "trap" in self.sanity_option and self.sanity_option["trap"]:
+                            now = await self.elapse_time(ctx)
+                            await self.process_traps(ctx, now)
 
                         # Did we receive an item?
                         for i, item_received in enumerate(ctx.items_received):
@@ -347,6 +422,12 @@ class SotNClient(BizHawkClient):
                                     if relic_name in self.enemysanity_items.values():
                                         inverted_enemysanity = {v: k for k, v in self.enemysanity_items.items()}
                                         self.checked_locations.append(inverted_enemysanity[relic_name])
+                                # Did we receive a trap?
+                                elif 350 <= item_received.item <= 371:
+                                    trap_name = item_id_to_name[item_received.item]
+                                    new_trap = TrapData(trap_name, -1)
+                                    new_trap.off_world = True
+                                    self.off_traps.append(new_trap)
                                 self.message_queue.append(f"Granted: {item_id_to_name[item_received.item]}")
                                 self.last_item_received = i + 1
                                 await bizhawk.write(
@@ -356,7 +437,10 @@ class SotNClient(BizHawkClient):
                     for location in cur_locations:
                         for name, loc in location.items():
                             if loc["ap_id"] in self.checked_locations:
-                                continue
+                                # We need to check if enemysanity/chairsanity have been granted
+                                # TODO Probably we need a way to check if a trap need to be processed again
+                                if not ("enemy" in loc and loc["enemy"]) or ("chair" in loc and loc["chair"]):
+                                    continue
 
                             # Process only Librarian item when inside to prevent tactics trigger checks
                             if self.at_librarian and name not in ["Long Library - Librarian Shop Item",
@@ -366,7 +450,7 @@ class SotNClient(BizHawkClient):
                             # Check if we need to update jewel item
                             if "Long Library" in name:
                                 if self.jewel_item == -1:
-                                    jewel_item = (await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd42, 2, "MainRAM")]))[0]
+                                    jewel_item = (await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd4f, 2, "MainRAM")]))[0]
                                     jewel_item = int.from_bytes(jewel_item)
                                     self.jewel_item = jewel_item
                                 elif self.jewel_item <= 257:
@@ -393,6 +477,15 @@ class SotNClient(BizHawkClient):
                                 break_flag = await self.read_int(ctx, loc["break_flag"], 1, "MainRAM")
                                 if break_flag & loc["break_mask"]:
                                     self.checked_locations.append(loc["ap_id"])
+                                    loc_id = loc["ap_id"]
+                                    if loc_id in self.boosts.keys():
+                                        boost_name = item_id_to_name[self.boosts[loc_id]]
+                                        await self.grant_item(items[boost_name], ctx)
+                                    if loc_id in self.traps_dict.keys():
+                                        trap_id = self.traps_dict[loc_id]
+                                        trap_name = item_id_to_name[trap_id]
+                                        self.traps.append(TrapData(trap_name, -1))
+
                             elif "kill_time" in loc:
                                 kill_time = await self.read_int(ctx, loc["kill_time"], 2, "MainRAM")
                                 if kill_time != 0:
@@ -471,11 +564,17 @@ class SotNClient(BizHawkClient):
                                 if enemy_flag & (1 << bit_check):
                                     self.checked_locations.append(loc["ap_id"])
                                     if self.enemysanity_items[name] != 0xfff:
-                                        enemy_loot = item_id_to_name[self.enemysanity_items[name]]
-                                        await self.grant_item(items[enemy_loot], ctx)
-                                        self.message_queue.append(f"Granted: {enemy_loot}")
                                         save_flag = await self.read_int(ctx, save_address, 1, "MainRAM")
+                                        if save_flag & (1 << bit_check):
+                                            # Already granted
+                                            continue
                                         save_flag |= (1 << bit_check)
+                                        enemy_loot = item_id_to_name[self.enemysanity_items[name]]
+
+                                        if not (loc["ap_id"] in self.boosts.keys() or
+                                                loc["ap_id"] in self.traps_dict.keys()):
+                                            await self.grant_item(items[enemy_loot], ctx)
+                                            self.message_queue.append(f"Granted: {enemy_loot}")
                                         await bizhawk.write(ctx.bizhawk_ctx, [(save_address,
                                                                                save_flag.to_bytes(),
                                                                                "MainRAM")])
@@ -488,12 +587,61 @@ class SotNClient(BizHawkClient):
                                                 self.checked_locations.append(self.relic_placement[relic_index])
                                             if len(self.copy_placement) and self.copy_placement[relic_index] != 0xfff:
                                                 self.checked_locations.append(self.copy_placement[relic_index])
+                            elif "drop" in loc and loc["drop"]:
+                                #TODO Arrumar!!!!!!!
+                                pass
+                            elif "chair" in loc and loc["chair"]:
+                                chair_rooms = [0x6b70, 0xa170, 0x8c70, 0x782c, 0xcc2c]
+                                # Are we in a room with a chair?
+                                if room_id in chair_rooms:
+                                    # Are we sit?
+                                    alucard_sprite = await self.read_int(ctx, 0x07342e, 2, "MainRAM")
+                                    # Confessionary left chair sprite is different. Dunno why
+                                    if alucard_sprite == 0x00df or alucard_sprite == 0x00e0:
+                                        chair_position = loc["position"]
+                                        x_pos = await self.read_int(ctx, 0x0973f0, 2, "MainRAM")
+                                        if x_pos == chair_position:
+                                            self.checked_locations.append(loc["ap_id"])
+                                            chair_id = loc["chair_id"]
+                                            save_flag = await self.read_int(ctx, 0x03becd, 2,
+                                                                            "MainRAM")
+                                            if save_flag & (1 << chair_id):
+                                                continue
+
+                                            save_flag |= (1 << chair_id)
+                                            await bizhawk.write(ctx.bizhawk_ctx,
+                                                                [(0x03becd,
+                                                                  save_flag.to_bytes(2, "little"),
+                                                                  "MainRAM")])
+                                            item_id = self.chairsanity_items[chair_id]
+                                            if item_id != 0xfff:
+                                                # Boosts and traps handled on checked difference
+                                                if not (loc["ap_id"] in self.boosts.keys() or
+                                                        loc["ap_id"] in self.traps_dict.keys()):
+                                                    item_name = item_id_to_name[item_id]
+                                                    await self.grant_item(items[item_name], ctx)
+                                                    self.message_queue.append(f"Granted: {item_name}")
                             else:
                                 if loot_flag & (1 << loc["index"]):
                                     self.checked_locations.append(loc["ap_id"])
 
-                    if self.checked_locations != self.sent_checked_locations:
-                        self.sent_checked_locations = self.checked_locations[:]
+                    difference = set(self.checked_locations) - set(self.sent_checked_locations)
+                    if len(difference):
+                        # Check if the new locations are Boosts/Traps
+                        new_checks = list(set(self.checked_locations) - set(self.sent_checked_locations))
+
+                        for n in new_checks:
+                            if n in self.boosts.keys():
+                                boost_name = item_id_to_name[self.boosts[n]]
+                                await self.grant_item(items[boost_name], ctx)
+                                self.message_queue.append(f"Boost: {boost_name}")
+                            elif n in self.traps_dict.keys():
+                                trap_id = self.traps_dict[n]
+                                trap_name = item_id_to_name[trap_id]
+                                self.traps.append(TrapData(trap_name, -1))
+                                self.message_queue.append(f"Trap: {trap_name}")
+
+                        self.sent_checked_locations = self.checked_locations.copy()
 
                         if self.sent_checked_locations is not None:
                             await ctx.send_msgs([{"cmd": "LocationChecks", "locations": self.sent_checked_locations}])
@@ -792,7 +940,7 @@ class SotNClient(BizHawkClient):
                             await bizhawk.write(ctx.bizhawk_ctx, [(address, value.to_bytes(), "MainRAM")])
 
                     # Write new client stuff here! REMEMBER TO DELETE THIS COMMENT ON THE FUTURE
-                    if self.seed_options["sanity"] & (1 << 6):
+                    if "auto_heal" in self.sanity_option and self.sanity_option["auto_heal"]:
                         can_save = await self.read_int(ctx, 0x03c708, 1, "MainRAM")
                         # Are we at a save room?
                         if can_save & 0x20 == 0x20:
@@ -868,7 +1016,7 @@ class SotNClient(BizHawkClient):
                 self.copy_placement.append(relic2)
 
         # Read enemysanity
-        if self.seed_options["sanity"] & (1 << 0):
+        if "enemysanity" in self.sanity_option and self.sanity_option["enemysanity"]:
             read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfb58, 244, "MainRAM")])
             read_list = list(bytes(read_value[0]))
             enemy_keys = list(ENEMY_LOCATIONS.keys())
@@ -981,12 +1129,69 @@ class SotNClient(BizHawkClient):
                 except IndexError:
                     pass
 
+        # Read Boosts/Traps
+        read_boosts = 0
+        read_traps = 0
+        if self.total_local_boost:
+            read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfe01, 32, "MainRAM")])
+            read_list = list(bytes(read_value[0]))
+
+            for i in range(0, 16, 2):
+                if read_boosts > self.total_local_boost:
+                    break
+                boost_id, boost_loc = bytes_as_trap(read_list[i], read_list[i+1])
+                self.boosts[boost_loc] = boost_id
+                read_boosts += 1
+
+            read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfe23, 68, "MainRAM")])
+            read_list = list(bytes(read_value[0]))
+
+            for i in range(0, 34, 2):
+                if read_boosts > self.total_local_boost:
+                    break
+                boost_id, boost_loc = bytes_as_trap(read_list[i], read_list[i + 1])
+                self.boosts[boost_loc] = boost_id
+                read_boosts += 1
+
+        if self.total_local_traps:
+            read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfe69, 12, "MainRAM")])
+            read_list = list(bytes(read_value[0]))
+
+            for i in range(0, 6, 2):
+                if read_traps > self.total_local_traps:
+                    break
+                trap_id, trap_loc = bytes_as_trap(read_list[i], read_list[i+1])
+                self.traps_dict[trap_loc] = trap_id
+                read_traps += 1
+
+            read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfe78, 88, "MainRAM")])
+            read_list = list(bytes(read_value[0]))
+
+            for i in range(0, 44, 2):
+                if read_traps >= self.total_local_traps:
+                    break
+                trap_id, trap_loc = bytes_as_trap(read_list[i], read_list[i + 1])
+                self.traps_dict[trap_loc] = trap_id
+                read_traps += 1
+
+        # Read chairsanity
+        if "chairsanity" in self.sanity_option and self.sanity_option["chairsanity"]:
+            read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfd3b, 15, "MainRAM")])
+            read_list = list(bytes(read_value[0]))
+            chair_id = 0
+            for i in range(0, 15, 3):
+                item1, item2 = bytes_as_items(read_list[i], read_list[i + 1], read_list[i + 2])
+                self.chairsanity_items[chair_id] = item1
+                chair_id += 1
+                self.chairsanity_items[chair_id] = item2
+                chair_id += 1
+
         # Check all locations
         region_loot = {}
         enemy_list = []
         # Read enemysanity
-        if self.seed_options["sanity"] & (1 << 0):
-            if self.seed_options["sanity"] & (1 << 1):
+        if "enemysanity" in self.sanity_option and self.sanity_option["enemysanity"]:
+            if "enemy_scroll" in self.sanity_option and self.sanity_option["enemy_scroll"]:
                 f_s = await self.read_int(ctx, 0x097973, 1, "MainRAM")
                 if f_s != 0:
                     self.enemy_scroll = "READY"
@@ -1054,9 +1259,62 @@ class SotNClient(BizHawkClient):
                                 # Update save variable
                                 save_flag |= (1 << bit_check)
                                 await bizhawk.write(ctx.bizhawk_ctx, [(save_address, save_flag.to_bytes(), "MainRAM")])
+                # Add chairsanity here Try saving at 0x03becd and 0xbece
+                elif "chair" in v and v["chair"]:
+                    chair_id = v["chair_id"]
+                    save_flag = await self.read_int(ctx, 0x03becd, 2, "MainRAM")
+                    if save_flag & (1 << chair_id):
+                        chair_item = self.chairsanity_items[chair_id]
+                        if chair_item == 0xFFF:
+                            continue
+                        chairsanity_item = item_id_to_name[chair_item]
+                        if chairsanity_item != 0xfff:
+                            await self.grant_item(items[chairsanity_item], ctx)
+                        save_flag |= (1 << chair_id)
+                        await bizhawk.write(ctx.bizhawk_ctx, [(0x03becd, save_flag.to_bytes(), "MainRAM")])
+                elif "drop" in v and v["drop"]:
+                    # Add dropsanity in the future
+                    pass
                 else:
                     if loot_flag & (1 << v["index"]):
-                        self.checked_locations.append(v["ap_id"])
+                        # Traps and boosts are handled bellow
+                        if v["ap_id"] in self.boosts:
+                            pass
+                        elif v["ap_id"] in self.traps_dict:
+                            pass
+                        else:
+                            self.checked_locations.append(v["ap_id"])
+
+        # Check for boosts and traps after a load
+        checked_boosts = []
+        for check in self.checked_locations:
+            if check in self.boosts.keys():
+                checked_boosts.append(check)
+
+        for i, b in enumerate(checked_boosts, start=1):
+            if i > self.last_boost_processed:
+                boost_name = item_id_to_name[self.boosts[b]]
+                await self.grant_item(items[boost_name], ctx)
+                self.last_boost_processed += 1
+
+        await bizhawk.write(ctx.bizhawk_ctx,
+                            [(BOOST_SAVE, self.last_boost_processed.to_bytes(1, "little"), "MainRAM")])
+
+        checked_traps = []
+        for check in self.checked_locations:
+            if check in self.traps_dict.keys():
+                checked_traps.append(check)
+
+        for i, t in enumerate(checked_traps, start=1):
+            if i > self.last_trap_processed:
+                trap_id = self.traps_dict[t]
+                trap_name = item_id_to_name[trap_id]
+                self.traps.append(TrapData(trap_name, -1))
+                self.last_trap_processed += 1
+
+        await bizhawk.write(ctx.bizhawk_ctx,
+                            [(TRAP_SAVE, self.last_trap_processed.to_bytes(1, "little"), "MainRAM")])
+
 
     async def read_options(self, ctx: "BizHawkClientContext"):
         read_value = await bizhawk.read(ctx.bizhawk_ctx, [(0x0dfaec, 108, "MainRAM")])
@@ -1071,6 +1329,11 @@ class SotNClient(BizHawkClient):
         seed = ""
         name = []
         name_read = False
+
+        boosts = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfb00, 1, "MainRAM")])
+        self.total_local_boost = int.from_bytes(boosts[0], "little")
+        traps = await bizhawk.read(ctx.bizhawk_ctx, [(0xdfb01, 1, "MainRAM")])
+        self.total_local_traps = int.from_bytes(traps[0], "little")
 
         for b in seed_list:
             seed += str(b >> 4)
@@ -1111,7 +1374,22 @@ class SotNClient(BizHawkClient):
         self.seed_options["seed"] = seed
         self.seed_options["player_number"] = player
         self.seed_options["player_name"] = utf_name
-        self.seed_options["sanity"] = read_sanity
+
+        if read_sanity & (1 << 0):
+            self.sanity_option["enemysanity"] = 1
+        if read_sanity & (1 << 1):
+            self.sanity_option["enemy_scroll"] = 1
+        if read_sanity & (1 << 2):
+            self.sanity_option["dropsanity"] = 1
+        if read_sanity & (1 << 3):
+            self.sanity_option["chairsanity"] = 1
+        if read_sanity & (1 << 4):
+            self.sanity_option["trap"] = 1
+        if read_sanity & (1 << 6):
+            self.sanity_option["auto_heal"] = 1
+        if read_sanity & (1 << 7):
+            self.sanity_option["death_link"] = 1
+
         ctx.username = utf_name
         ctx.auth = utf_name
 
@@ -1279,22 +1557,38 @@ class SotNClient(BizHawkClient):
         await bizhawk.write(ctx.bizhawk_ctx, [(0x097a8e, bytes(inv_list), "MainRAM")])
         await bizhawk.write(ctx.bizhawk_ctx, [(0x09798b, bytes(qty_list), "MainRAM")])
 
-    async def process_traps(self, ctx: "BizHawkClientContext", time: int):
+    async def process_traps(self, ctx: "BizHawkClientContext", game_time: int):
         status = await bizhawk.read(ctx.bizhawk_ctx, [(0x073404, 1, "MainRAM")])
         pause_screen = await bizhawk.read(ctx.bizhawk_ctx, [(0x09794c, 1, "MainRAM")])
         if status[0] == b'\x0b' or pause_screen[0] == b'\x00':
             return
         trap_index = -1
+        trap_data = None
+        off_world_trap_active = False
 
         for i, trap in enumerate(self.traps):
             if not trap.trap_ended:
-                trap_index = i
-                break
+                # There is an off-world trap active?
+                for off_trap in self.off_traps:
+                    if off_trap.trap_active:
+                        off_world_trap_active = True
+                        break
+
+                if not off_world_trap_active:
+                    trap_index = i
+                    trap_data: TrapData = self.traps[trap_index]
+                    break
 
         if trap_index == -1:
+            for i, trap in enumerate(self.off_traps):
+                if not trap.trap_ended:
+                    trap_index = i
+                    trap_data: TrapData = self.off_traps[trap_index]
+                    break
+
+        if not trap_data:
             return
 
-        trap_data: TrapData = self.traps[trap_index]
         time_name = "minutes"
         if "1" in trap_data.trap_name and "10" not in trap_data.trap_name:
             time_name = "minute"
@@ -1312,8 +1606,9 @@ class SotNClient(BizHawkClient):
             trap_type = "Not timed"
 
         if not trap_data.trap_active:
+            trap_data.trap_active = True
             if trap_data.start_time == -1:
-                trap_data.start_time = time
+                trap_data.start_time = game_time
 
             if trap_type != "Axe Lord":
                 await self.play_sfx(ctx, 0xf2)
@@ -1345,10 +1640,17 @@ class SotNClient(BizHawkClient):
                 trap_data.trap_ended = True
                 trap_data.trap_announce = True
                 trap_data.trap_active = False
-                self.last_trap_processed += 1
-                # Update last trap processed on RAM
-                await bizhawk.write(ctx.bizhawk_ctx,
-                                    [(0x03bf21, self.last_trap_processed.to_bytes(2, "little"), "MainRAM")])
+
+                if trap_data.off_world:
+                    self.last_off_trap += 1
+                    await bizhawk.write(ctx.bizhawk_ctx,
+                                        [(TRAP_SAVE, self.last_off_trap.to_bytes(1, "little"), "MainRAM")])
+                else:
+                    self.last_trap_processed += 1
+                    await bizhawk.write(ctx.bizhawk_ctx, [(TRAP_OFF_SAVE,
+                                                           self.last_trap_processed.to_bytes(1,
+                                                                                             "little"),
+                                                           "MainRAM")])
 
                 if result_str != "":
                     logger.info(result_str)
@@ -1405,7 +1707,7 @@ class SotNClient(BizHawkClient):
                 elif "30" in trap_data.trap_name:
                     total_time = 30
 
-            if time - trap_data.start_time - total_paused >= total_time:
+            if game_time - trap_data.start_time - total_paused >= total_time:
                 if "1 hit KO" in trap_data.trap_name:
                     await bizhawk.write(
                         ctx.bizhawk_ctx, [(0x097ba0, self.hp_backup.to_bytes(4, "little"), "MainRAM")])
@@ -1436,11 +1738,12 @@ class SotNClient(BizHawkClient):
 
                 self.already_active_trap = []
                 trap_data.trap_ended = True
+                trap_data.trap_active = False
                 logger.info(f"Trap: {trap_data.trap_name} {time_name} ended!")
                 self.last_trap_processed += 1
                 # Update last trap processed on RAM
                 await bizhawk.write(ctx.bizhawk_ctx,
-                                    [(0x03bf21, self.last_trap_processed.to_bytes(2, "little"), "MainRAM")])
+                                    [(TRAP_SAVE, self.last_trap_processed.to_bytes(1, "little"), "MainRAM")])
 
                 remaining_traps = ""
                 total_traps = len(self.traps)
@@ -1460,6 +1763,7 @@ class SotNClient(BizHawkClient):
                         await bizhawk.write(ctx.bizhawk_ctx, [(0x097ba0, b'\x01\x00\x00\x00', "MainRAM")])
 
     async def process_multiple_traps(self, ctx: "BizHawkClientContext", time: int):
+        # Maybe fix in the future
         update_trap_data = False
 
         for trap in self.traps:
@@ -1689,15 +1993,16 @@ class SotNClient(BizHawkClient):
         if update_trap_data:
             # Update last trap processed on RAM
             await bizhawk.write(ctx.bizhawk_ctx,
-                                [(0x03bf21, self.last_trap_processed.to_bytes(2, "little"), "MainRAM")])
+                                [(TRAP_SAVE, self.last_trap_processed.to_bytes(1, "little"), "MainRAM")])
 
     async def grant_item(self, item: dict, ctx: "BizHawkClientContext"):
         item_id = item["id"]
         address = item["address"]
 
-        # TODO Boosts and traps
-        if 330 <= item_id < 370:
+        # Boosts
+        if 330 <= item_id <= 341:
             boost_name = item_id_to_name[item_id]
+            self.last_boost_processed += 1
             if "Experience boost" in boost_name:
                 xp_boost = 0
                 if boost_name == "Experience boost 1k":
@@ -1721,6 +2026,14 @@ class SotNClient(BizHawkClient):
             elif "restore" in boost_name:
                 max_value = await self.read_int(ctx, address + 4, 4, "MainRAM")
                 await bizhawk.write(ctx.bizhawk_ctx, [(address, max_value.to_bytes(4, "little"), "MainRAM")])
+
+            # Update variable
+            await bizhawk.write(ctx.bizhawk_ctx,
+                                [(BOOST_SAVE, self.last_boost_processed.to_bytes(1, "little"), "MainRAM")])
+        # Traps
+        elif 350 <= item_id <= 371:
+            # On process_traps
+            pass
         # Relics
         elif 300 <= item_id <= 329:
             relic = await self.read_int(ctx, address, 1, "MainRAM")
@@ -1745,7 +2058,6 @@ class SotNClient(BizHawkClient):
             await bizhawk.write(ctx.bizhawk_ctx, [(address + 4, max_hp.to_bytes(4, "little"), "MainRAM")])
         else:
             qty = await self.read_int(ctx, address, 1, "MainRAM")
-
             if qty < 255:
                 qty += 1
             # First item, sort the inventory
