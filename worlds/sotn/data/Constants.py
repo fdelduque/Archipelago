@@ -1,4 +1,4 @@
-CURRENT_VERSION = 816
+CURRENT_VERSION = 817
 
 # This is applied to helmet, armor, cloak, and other ids that are sold in
 # the librarian's shop menu or are in an equipment slot
