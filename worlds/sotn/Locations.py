@@ -7,6 +7,8 @@ ABREV_TO_LOCATION = dict()
 AP_ID_TO_NAME = dict()
 ZONE_LOCATIONS = dict()
 ENEMY_LOCATIONS = dict()
+CHAIR_LOCATIONS = dict()
+DROP_LOCATIONS = dict()
 
 locations = {
     "Colosseum Second Part - Bottom Right Room":
@@ -4727,11 +4729,962 @@ locations = {
             "enemy": True,
             "zones": [ZONE["RCHI"], ZONE["RBO2"]],
         },
+    "Chairsanity - View Room with Birds Left Chair":
+        {
+            "ap_id": 541,
+            "chair": True,
+            "chair_id": 0,
+            "zones": [ZONE["NO1"]],
+            "room": 0x6b70,
+            "position": 0x01e6
+        },
+    "Chairsanity - View Room with Birds Right Chair":
+        {
+            "ap_id": 542,
+            "chair": True,
+            "chair_id": 1,
+            "zones": [ZONE["NO1"]],
+            "room": 0x6b70,
+            "position": 0x024a
+        },
+    "Chairsanity - Before Doppelganger10":
+        {
+            "ap_id": 543,
+            "chair": True,
+            "chair_id": 2,
+            "zones": [ZONE["NO1"]],
+            "room": 0xa170,
+            "position": 0x0066
+        },
+    "Chairsanity - Library Study Left Chair":
+        {
+            "ap_id": 544,
+            "chair": True,
+            "chair_id": 3,
+            "zones": [ZONE["LIB"]],
+            "room": 0x8c70,
+            "position": 0x0060
+        },
+    "Chairsanity - Library Study Right Chair":
+        {
+            "ap_id": 545,
+            "chair": True,
+            "chair_id": 4,
+            "zones": [ZONE["LIB"]],
+            "room": 0x8c70,
+            "position": 0x0098
+        },
+    "Chairsanity - Silver Ring Room Left Chair":
+        {
+            "ap_id": 546,
+            "chair": True,
+            "chair_id": 5,
+            "zones": [ZONE["DAI"]],
+            "room": 0x782c,
+            "position": 0x0116
+        },
+    "Chairsanity - Silver Ring Room Right Chair":
+        {
+            "ap_id": 547,
+            "chair": True,
+            "chair_id": 6,
+            "zones": [ZONE["DAI"]],
+            "room": 0x782c,
+            "position": 0x016a
+        },
+    "Chairsanity - Confesionary Room Left Chair":
+        {
+            "ap_id": 548,
+            "chair": True,
+            "chair_id": 7,
+            "zones": [ZONE["DAI"]],
+            "room": 0xcc2c,
+            "position": 0x0066
+        },
+    "Chairsanity - Confesionary Room Right Chair":
+        {
+            "ap_id": 549,
+            "chair": True,
+            "chair_id": 8,
+            "zones": [ZONE["DAI"]],
+            "room": 0xcc2c,
+            "position": 0x008c
+        },
+    "Dropsanity - Blade soldier":
+        {
+            "ap_id": 550,
+            "drop": True,
+            "zones": [ZONE["ARE"]],
+            "byte": 3,
+            "bit": 0
+        },
+    "Dropsanity - Paranthropus":
+        {
+            "ap_id": 551,
+            "drop": True,
+            "zones": [ZONE["ARE"], ZONE["RNO1"]],
+            "byte": 8,
+            "bit": 2
+        },
+    "Dropsanity - Blade master":
+        {
+            "ap_id": 552,
+            "drop": True,
+            "zones": [ZONE["ARE"]],
+            "byte": 8,
+            "bit": 4
+        },
+    "Dropsanity - Grave keeper":
+        {
+            "ap_id": 553,
+            "drop": True,
+            "zones": [ZONE["ARE"], ZONE["CAT"]],
+            "byte": 8,
+            "bit": 6
+        },
+    "Dropsanity - Valhalla knight":
+        {
+            "ap_id": 554,
+            "drop": True,
+            "zones": [ZONE["ARE"], ZONE["NO2"], ZONE["RNZ1"]],
+            "byte": 9,
+            "bit": 4
+        },
+    "Dropsanity - Wereskeleton":
+        {
+            "ap_id": 555,
+            "drop": True,
+            "zones": [ZONE["CAT"]],
+            "byte": 8,
+            "bit": 5
+        },
+    "Dropsanity - Gremlin":
+        {
+            "ap_id": 556,
+            "drop": True,
+            "zones": [ZONE["CAT"], ZONE["CHI"], ZONE["RNZ0"]],
+            "byte": 8,
+            "bit": 7
+        },
+    "Dropsanity - Bone ark":
+        {
+            "ap_id": 557,
+            "drop": True,
+            "zones": [ZONE["CAT"]],
+            "byte": 9,
+            "bit": 3
+        },
+    "Dropsanity - Lossoth":
+        {
+            "ap_id": 558,
+            "drop": True,
+            "zones": [ZONE["CAT"]],
+            "byte": 10,
+            "bit": 0
+        },
+    "Dropsanity - Discus lord":
+        {
+            "ap_id": 559,
+            "drop": True,
+            "zones": [ZONE["CAT"]],
+            "byte": 10,
+            "bit": 5
+        },
+    "Dropsanity - Hellfire beast":
+        {
+            "ap_id": 560,
+            "drop": True,
+            "zones": [ZONE["CAT"]],
+            "byte": 11,
+            "bit": 0
+        },
+    "Dropsanity - Salem witch":
+        {
+            "ap_id": 561,
+            "drop": True,
+            "zones": [ZONE["CHI"], ZONE["RNZ0"]],
+            "byte": 10,
+            "bit": 1
+        },
+    "Dropsanity - Venus weed":
+        {
+            "ap_id": 562,
+            "drop": True,
+            "zones": [ZONE["CHI"]],
+            "byte": 11,
+            "bit": 6
+        },
+    "Dropsanity - Thornweed":
+        {
+            "ap_id": 563,
+            "drop": True,
+            "zones": [ZONE["LIB"], ZONE["CHI"], ZONE["CAT"], ZONE["RNO0"], ZONE["RCHI"]],
+            "byte": 2,
+            "bit": 0
+        },
+    "Dropsanity - Spellbook":
+        {
+            "ap_id": 564,
+            "drop": True,
+            "zones": [ZONE["LIB"]],
+            "byte": 4,
+            "bit": 7
+        },
+    "Dropsanity - Ectoplasm":
+        {
+            "ap_id": 565,
+            "drop": True,
+            "zones": [ZONE["LIB"]],
+            "byte": 5,
+            "bit": 1
+        },
+    "Dropsanity - Dhuron":
+        {
+            "ap_id": 566,
+            "drop": True,
+            "zones": [ZONE["LIB"]],
+            "byte": 5,
+            "bit": 6
+        },
+    "Dropsanity - Magic tome":
+        {
+            "ap_id": 567,
+            "drop": True,
+            "zones": [ZONE["LIB"]],
+            "byte": 6,
+            "bit": 1
+        },
+    "Dropsanity - Corpseweed":
+        {
+            "ap_id": 568,
+            "drop": True,
+            "zones": [ZONE["LIB"], ZONE["CHI"], ZONE["RCHI"]],
+            "byte": 6,
+            "bit": 5
+        },
+    "Dropsanity - Flea armor":
+        {
+            "ap_id": 569,
+            "drop": True,
+            "zones": [ZONE["LIB"], ZONE["NZ1"]],
+            "byte": 8,
+            "bit": 0
+        },
+    "Dropsanity - Bone Pillar":
+        {
+            "ap_id": 570,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 4,
+            "bit": 0
+        },
+    "Dropsanity - Winged guard":
+        {
+            "ap_id": 571,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 5,
+            "bit": 0
+        },
+    "Dropsanity - Corner guard":
+        {
+            "ap_id": 572,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 5,
+            "bit": 5
+        },
+    "Dropsanity - Black crow":
+        {
+            "ap_id": 573,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 6,
+            "bit": 3
+        },
+    "Dropsanity - Blue raven":
+        {
+            "ap_id": 574,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 6,
+            "bit": 4
+        },
+    "Dropsanity - Bone halberd":
+        {
+            "ap_id": 575,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 7,
+            "bit": 1
+        },
+    "Dropsanity - Hunting girl":
+        {
+            "ap_id": 576,
+            "drop": True,
+            "zones": [ZONE["DAI"], ZONE["ARE"]],
+            "byte": 7,
+            "bit": 3
+        },
+    "Dropsanity - Spectral sword(swords)":
+        {
+            "ap_id": 577,
+            "drop": True,
+            "zones": [ZONE["DAI"]],
+            "byte": 7,
+            "bit": 6
+        },
+    "Dropsanity - Slinger":
+        {
+            "ap_id": 578,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 1,
+            "bit": 5
+        },
+    "Dropsanity - Ouija table":
+        {
+            "ap_id": 579,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 1,
+            "bit": 6
+        },
+    "Dropsanity - Skelerang":
+        {
+            "ap_id": 580,
+            "drop": True,
+            "zones": [ZONE["NO0"], ZONE["DAI"], ZONE["NO2"]],
+            "byte": 1,
+            "bit": 7
+        },
+    "Dropsanity - Ghost":
+        {
+            "ap_id": 581,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 2,
+            "bit": 2
+        },
+    "Dropsanity - Marionette":
+        {
+            "ap_id": 582,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 2,
+            "bit": 3
+        },
+    "Dropsanity - Diplocephalus":
+        {
+            "ap_id": 583,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 2,
+            "bit": 5
+        },
+    "Dropsanity - Flea man":
+        {
+            "ap_id": 584,
+            "drop": True,
+            "zones": [ZONE["NO0"], ZONE["LIB"], ZONE["NZ1"]],
+            "byte": 2,
+            "bit": 6
+        },
+    "Dropsanity - Plate lord":
+        {
+            "ap_id": 585,
+            "drop": True,
+            "zones": [ZONE["NO0"], ZONE["ARE"]],
+            "byte": 3,
+            "bit": 3
+        },
+    "Dropsanity - Stone rose":
+        {
+            "ap_id": 586,
+            "drop": True,
+            "zones": [ZONE["NO0"]],
+            "byte": 3,
+            "bit": 4
+        },
+    "Dropsanity - Ctulhu":
+        {
+            "ap_id": 587,
+            "drop": True,
+            "zones": [ZONE["NO0"], ZONE["RARE"], ZONE["RNO0"]],
+            "byte": 3,
+            "bit": 6
+        },
+    "Dropsanity - Medusa head":
+        {
+            "ap_id": 588,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NZ1"], ZONE["RNO0"], ZONE["RNO2"]],
+            "byte": 2,
+            "bit": 7
+        },
+    "Dropsanity - Bone musket":
+        {
+            "ap_id": 589,
+            "drop": True,
+            "zones": [ZONE["NO1"]],
+            "byte": 3,
+            "bit": 1
+        },
+    "Dropsanity - Medusa head(yellow)":
+        {
+            "ap_id": 590,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NZ1"], ZONE["RNO0"], ZONE["RNO2"]],
+            "byte": 3,
+            "bit": 2
+        },
+    "Dropsanity - Axe knight(armored)":
+        {
+            "ap_id": 591,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NZ0"]],
+            "byte": 3,
+            "bit": 5
+        },
+    "Dropsanity - Bone archer":
+        {
+            "ap_id": 592,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NO4"]],
+            "byte": 3,
+            "bit": 7
+        },
+    "Dropsanity - Skeleton ape":
+        {
+            "ap_id": 593,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NO4"]],
+            "byte": 4,
+            "bit": 5
+        },
+    "Dropsanity - Spear guard":
+        {
+            "ap_id": 594,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NO4"]],
+            "byte": 4,
+            "bit": 6
+        },
+    "Dropsanity - Sword lord":
+        {
+            "ap_id": 595,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["NZ1"]],
+            "byte": 5,
+            "bit": 2
+        },
+    "Dropsanity - Armor lord":
+        {
+            "ap_id": 596,
+            "drop": True,
+            "zones": [ZONE["NO1"], ZONE["ARE"]],
+            "byte": 5,
+            "bit": 4
+        },
+    "Dropsanity - Spectral sword":
+        {
+            "ap_id": 597,
+            "drop": True,
+            "zones": [ZONE["NO2"]],
+            "byte": 7,
+            "bit": 0
+        },
+    "Dropsanity - Blade":
+        {
+            "ap_id": 598,
+            "drop": True,
+            "zones": [ZONE["NO2"], ZONE["NO3"], ZONE["RNO0"]],
+            "byte": 10,
+            "bit": 2
+        },
+    "Dropsanity - Hammer":
+        {
+            "ap_id": 599,
+            "drop": True,
+            "zones": [ZONE["NO2"]],
+            "byte": 10,
+            "bit": 4
+        },
+    "Dropsanity - Bat":
+        {
+            "ap_id": 600,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["NP3"], ZONE["NO4"], ZONE["DAI"], ZONE["RCHI"], ZONE["RCAT"]],
+            "byte": 0,
+            "bit": 2
+        },
+    "Dropsanity - Zombie":
+        {
+            "ap_id": 601,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["NP3"]],
+            "byte": 0,
+            "bit": 4
+        },
+    "Dropsanity - Merman":
+        {
+            "ap_id": 602,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["NP3"]],
+            "byte": 0,
+            "bit": 5
+        },
+    "Dropsanity - Merman(red)":
+        {
+            "ap_id": 603,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["NP3"]],
+            "byte": 1,
+            "bit": 1
+        },
+    "Dropsanity - Owl knight":
+        {
+            "ap_id": 604,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["ARE"]],
+            "byte": 7,
+            "bit": 5
+        },
+    "Dropsanity - Gurkha":
+        {
+            "ap_id": 605,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["RNO0"]],
+            "byte": 10,
+            "bit": 3
+        },
+    "Dropsanity - Toad":
+        {
+            "ap_id": 606,
+            "drop": True,
+            "zones": [ZONE["NO4"]],
+            "byte": 5,
+            "bit": 3
+        },
+    "Dropsanity - Frog":
+        {
+            "ap_id": 607,
+            "drop": True,
+            "zones": [ZONE["NO4"]],
+            "byte": 5,
+            "bit": 7
+        },
+    "Dropsanity - Frozen shade":
+        {
+            "ap_id": 608,
+            "drop": True,
+            "zones": [ZONE["NO4"]],
+            "byte": 6,
+            "bit": 0
+        },
+    "Dropsanity - Fishhead":
+        {
+            "ap_id": 609,
+            "drop": True,
+            "zones": [ZONE["NO4"]],
+            "byte": 9,
+            "bit": 6
+        },
+    "Dropsanity - Killer fish":
+        {
+            "ap_id": 610,
+            "drop": True,
+            "zones": [ZONE["NO4"], ZONE["RNO4"]],
+            "byte": 11,
+            "bit": 2
+        },
+    "Dropsanity - Skeleton":
+        {
+            "ap_id": 611,
+            "drop": True,
+            "zones": [ZONE["NZ0"], ZONE["NO0"], ZONE["NO1"], ZONE["LIB"], ZONE["RCAT"]],
+            "byte": 11,
+            "bit": 2
+        },
+    "Dropsanity - Bone scimitar":
+        {
+            "ap_id": 612,
+            "drop": True,
+            "zones": [ZONE["NZ0"], ZONE["NO3"], ZONE["NP3"], ZONE["ARE"]],
+            "byte": 1,
+            "bit": 0
+        },
+    "Dropsanity - Axe knight":
+        {
+            "ap_id": 613,
+            "drop": True,
+            "zones": [ZONE["NZ0"], ZONE["NO0"], ZONE["NO1"], ZONE["TOP"], ZONE["ARE"]],
+            "byte": 1,
+            "bit": 3
+        },
+    "Dropsanity - Bloody zombie":
+        {
+            "ap_id": 614,
+            "drop": True,
+            "zones": [ZONE["NO3"], ZONE["NZ0"], ZONE["NO2"]],
+            "byte": 1,
+            "bit": 4
+        },
+    "Dropsanity - Phantom skull":
+        {
+            "ap_id": 615,
+            "drop": True,
+            "zones": [ZONE["NZ1"]],
+            "byte": 4,
+            "bit": 3
+        },
+    "Dropsanity - Skull lord":
+        {
+            "ap_id": 616,
+            "drop": True,
+            "zones": [ZONE["NZ1"], ZONE["RTOP"]],
+            "byte": 6,
+            "bit": 2
+        },
+    "Dropsanity - Flail guard":
+        {
+            "ap_id": 617,
+            "drop": True,
+            "zones": [ZONE["NZ1"]],
+            "byte": 6,
+            "bit": 6
+        },
+    "Dropsanity - Vandal sword":
+        {
+            "ap_id": 618,
+            "drop": True,
+            "zones": [ZONE["NZ1"]],
+            "byte": 7,
+            "bit": 7
+        },
+    "Dropsanity - Harpy":
+        {
+            "ap_id": 619,
+            "drop": True,
+            "zones": [ZONE["NZ1"]],
+            "byte": 9,
+            "bit": 0
+        },
+    "Dropsanity - Cloaked knight":
+        {
+            "ap_id": 620,
+            "drop": True,
+            "zones": [ZONE["NZ1"], ZONE["RNZ1"]],
+            "byte": 9,
+            "bit": 5
+        },
+    "Dropsanity - Flea rider":
+        {
+            "ap_id": 621,
+            "drop": True,
+            "zones": [ZONE["TOP"]],
+            "byte": 6,
+            "bit": 7
+        },
+    "Dropsanity - Werewolf(reverse)":
+        {
+            "ap_id": 622,
+            "drop": True,
+            "zones": [ZONE["RARE"]],
+            "byte": 13,
+            "bit": 3
+        },
+    "Dropsanity - Minotaur":
+        {
+            "ap_id": 623,
+            "drop": True,
+            "zones": [ZONE["RARE"]],
+            "byte": 13,
+            "bit": 7
+        },
+    "Dropsanity - Azaghal":
+        {
+            "ap_id": 624,
+            "drop": True,
+            "zones": [ZONE["RARE"], ZONE["RNO2"]],
+            "byte": 17,
+            "bit": 0
+        },
+    "Dropsanity - Frozen half":
+        {
+            "ap_id": 625,
+            "drop": True,
+            "zones": [ZONE["RCAT"]],
+            "byte": 17,
+            "bit": 1
+        },
+    "Dropsanity - Salome":
+        {
+            "ap_id": 626,
+            "drop": True,
+            "zones": [ZONE["RCAT"]],
+            "byte": 17,
+            "bit": 2
+        },
+    "Dropsanity - Archer":
+        {
+            "ap_id": 627,
+            "drop": True,
+            "zones": [ZONE["RDAI"]],
+            "byte": 13,
+            "bit": 2
+        },
+    "Dropsanity - Black panther":
+        {
+            "ap_id": 628,
+            "drop": True,
+            "zones": [ZONE["RDAI"]],
+            "byte": 13,
+            "bit": 4
+        },
+    "Dropsanity - Sniper of goth":
+        {
+            "ap_id": 629,
+            "drop": True,
+            "zones": [ZONE["RDAI"]],
+            "byte": 14,
+            "bit": 5
+        },
+    "Dropsanity - Spectral sword(shields)":
+        {
+            "ap_id": 630,
+            "drop": True,
+            "zones": [ZONE["RDAI"]],
+            "byte": 14,
+            "bit": 6
+        },
+    "Dropsanity - Imp":
+        {
+            "ap_id": 631,
+            "drop": True,
+            "zones": [ZONE["RDAI"], ZONE["RNO4"], ZONE["RNZ0"]],
+            "byte": 16,
+            "bit": 5
+        },
+    "Dropsanity - Lion":
+        {
+            "ap_id": 632,
+            "drop": True,
+            "zones": [ZONE["RLIB"]],
+            "byte": 11,
+            "bit": 7
+        },
+    "Dropsanity - Scarecrow":
+        {
+            "ap_id": 633,
+            "drop": True,
+            "zones": [ZONE["RLIB"]],
+            "byte": 12,
+            "bit": 0
+        },
+    "Dropsanity - Schmoo":
+        {
+            "ap_id": 634,
+            "drop": True,
+            "zones": [ZONE["RLIB"]],
+            "byte": 12,
+            "bit": 2
+        },
+    "Dropsanity - Tin man":
+        {
+            "ap_id": 635,
+            "drop": True,
+            "zones": [ZONE["RLIB"]],
+            "byte": 12,
+            "bit": 3
+        },
+    "Dropsanity - Jack O'bones":
+        {
+            "ap_id": 636,
+            "drop": True,
+            "zones": [ZONE["RNO0"], ZONE["RNO1"], ZONE["RNO3"], ZONE["RNO4"]],
+            "byte": 13,
+            "bit": 1
+        },
+    "Dropsanity - Nova skeleton":
+        {
+            "ap_id": 637,
+            "drop": True,
+            "zones": [ZONE["RNO0"], ZONE["RNO1"], ZONE["RNO3"], ZONE["RNO4"]],
+            "byte": 14,
+            "bit": 0
+        },
+    "Dropsanity - Gorgon":
+        {
+            "ap_id": 638,
+            "drop": True,
+            "zones": [ZONE["RNO0"]],
+            "byte": 15,
+            "bit": 4
+        },
+    "Dropsanity - Guardian":
+        {
+            "ap_id": 639,
+            "drop": True,
+            "zones": [ZONE["RNO0"]],
+            "byte": 17,
+            "bit": 6
+        },
+    "Dropsanity - Flying zombie":
+        {
+            "ap_id": 640,
+            "drop": True,
+            "zones": [ZONE["RNO2"]],
+            "byte": 12,
+            "bit": 7
+        },
+    "Dropsanity - Ghost dancer":
+        {
+            "ap_id": 641,
+            "drop": True,
+            "zones": [ZONE["RNO2"]],
+            "byte": 14,
+            "bit": 7
+        },
+    "Dropsanity - Malachi":
+        {
+            "ap_id": 642,
+            "drop": True,
+            "zones": [ZONE["RNO2"]],
+            "byte": 15,
+            "bit": 5
+        },
+    "Dropsanity - Karasuman":
+        {
+            "ap_id": 643,
+            "drop": True,
+            "zones": [ZONE["RNO2"]],
+            "byte": 10,
+            "bit": 6
+        },
+    "Dropsanity - Orobourous":
+        {
+            "ap_id": 644,
+            "drop": True,
+            "zones": [ZONE["RNO3"]],
+            "byte": 14,
+            "bit": 1
+        },
+    "Dropsanity - Fire warg":
+        {
+            "ap_id": 645,
+            "drop": True,
+            "zones": [ZONE["RNO3"]],
+            "byte": 14,
+            "bit": 3
+        },
+    "Dropsanity - Warg rider":
+        {
+            "ap_id": 646,
+            "drop": True,
+            "zones": [ZONE["RNO3"]],
+            "byte": 15,
+            "bit": 0
+        },
+    "Dropsanity - Dodo bird":
+        {
+            "ap_id": 647,
+            "drop": True,
+            "zones": [ZONE["RNO3"]],
+            "byte": 17,
+            "bit": 4
+        },
+    "Dropsanity - Rock knight":
+        {
+            "ap_id": 648,
+            "drop": True,
+            "zones": [ZONE["RNO4"]],
+            "byte": 14,
+            "bit": 4
+        },
+    "Dropsanity - Cave troll":
+        {
+            "ap_id": 649,
+            "drop": True,
+            "zones": [ZONE["RNO4"]],
+            "byte": 15,
+            "bit": 1
+        },
+    "Dropsanity - Dark octopus":
+        {
+            "ap_id": 650,
+            "drop": True,
+            "zones": [ZONE["RNO4"]],
+            "byte": 15,
+            "bit": 2
+        },
+    "Dropsanity - Blue venus weed":
+        {
+            "ap_id": 651,
+            "drop": True,
+            "zones": [ZONE["RNO4"], ZONE["RNO3"]],
+            "byte": 15,
+            "bit": 7
+        },
+    "Dropsanity - Bitterfly":
+        {
+            "ap_id": 652,
+            "drop": True,
+            "zones": [ZONE["RNZ0"]],
+            "byte": 13,
+            "bit": 0
+        },
+    "Dropsanity - Fire demon":
+        {
+            "ap_id": 653,
+            "drop": True,
+            "zones": [ZONE["RNZ0"]],
+            "byte": 15,
+            "bit": 3
+        },
+    "Dropsanity - Bomb knight":
+        {
+            "ap_id": 654,
+            "drop": True,
+            "zones": [ZONE["RNZ1"], ZONE["RNO4"]],
+            "byte": 12,
+            "bit": 6
+        },
+    "Dropsanity - Lesser demon":
+        {
+            "ap_id": 655,
+            "drop": True,
+            "zones": [ZONE["RNZ1"]],
+            "byte": 9,
+            "bit": 7
+        },
+    "Dropsanity - Tombstone":
+        {
+            "ap_id": 656,
+            "drop": True,
+            "zones": [ZONE["RTOP"]],
+            "byte": 11,
+            "bit": 5
+        },
+    "Dropsanity - Yorick":
+        {
+            "ap_id": 657,
+            "drop": True,
+            "zones": [ZONE["RTOP"]],
+            "byte": 12,
+            "bit": 5
+        },
 }
 
 for k, v in locations.items():
     if "enemy" in v and v["enemy"]:
         ENEMY_LOCATIONS[k] = v
+
+    if "chair" in v and v["chair"]:
+        CHAIR_LOCATIONS[k] = v
+
+    if "drop" in v and v["drop"]:
+        DROP_LOCATIONS[k] = v
 
     for zone in v["zones"]:
         if zone in ZONE_LOCATIONS:
