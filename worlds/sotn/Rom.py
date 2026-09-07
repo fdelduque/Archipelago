@@ -12,7 +12,7 @@ from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes, APPatchEx
 from BaseClasses import Item, ItemClassification
 from .ErrorRecalc import ErrorRecalculator
 from .Items import tile_id_offset, relic_id_to_name, items, weapon1, shield, armor, helmet, cloak, accessory, id_to_item
-from .Locations import locations
+from .Locations import locations, CHAIR_LOCATIONS
 from .Enemies import enemy_dict, enemy_stats_list, enemy_atk_type_list, enemy_weak_type_list
 from .data.Constants import (RELIC_NAMES, SLOT, slots, equip_id_offset, equip_inv_id_offset, CURRENT_VERSION,
                              faerie_scroll_force_addresses, shop_item_data, start_room_data, music, music_by_area)
@@ -21,7 +21,6 @@ from .data.Zones import zones, ZONE
 
 import hashlib
 import os
-import subprocess
 
 if TYPE_CHECKING:
     from . import SotnWorld
@@ -205,6 +204,9 @@ def item_slots(item: dict) -> list:
         return [slots[SLOT["CLOAK"]]]
     elif item["type"] == "ACCESSORY":
         return [slots[SLOT["OTHER"]], slots[SLOT["OTHER2"]]]
+
+    # There is no type. Probably a trap or a boost
+    return [slots[SLOT["OTHER"]], slots[SLOT["OTHER2"]]]
 
 
 def shop_item_type(item: dict) -> int:
@@ -780,17 +782,26 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     local_relics = {}
     copy1_relics = {}
     enemysanity_items = []
+    dropsanity_items = []
+    chairsanity_items = {}
+    boosts = []
+    traps = []
+    total_local_boosts = 0
+    total_local_traps = 0
     dopp10_item = 0xffff
 
     for loc in world.multiworld.get_locations(world.player):
-        # Save Jewel of open item
+        # Save Jewel of open item at the end of Richter Defeat Dracula
         if loc.name == "Long Library - Librarian Shop Item":
             item_data = items["Secret boots"]
             if loc.item.player == world.player:
                 item_data = items[loc.item.name]
             jewel_item = item_data["id"]
-            patch.write_token(APTokenTypes.WRITE, 0xf4f3a, jewel_item.to_bytes(2))
-            patch.write_token(APTokenTypes.WRITE, 0x438d6d2, jewel_item.to_bytes(2, "little"))
+            patch.write_token(APTokenTypes.WRITE, 0xf4f47, jewel_item.to_bytes(2))
+            patch.write_token(APTokenTypes.WRITE, 0x438d6df, jewel_item.to_bytes(2, "little"))
+            # Terminate
+            patch.write_token(APTokenTypes.WRITE, 0xf4f4a, (0xFF00).to_bytes(2, "little"))
+            patch.write_token(APTokenTypes.WRITE, 0x438d6e2, (0xFF00).to_bytes(2, "little"))
 
         # Save Doppelganger10 item
         if loc.name == "Outer Wall - Doppleganger 10 item":
@@ -802,9 +813,24 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         if loc.item and loc.item.player == world.player:
             if loc.item.name == "Victory":
                 continue
+
             item_data = items[loc.item.name]
-            item_id = tile_value(item_data, {})
+
+            if item_data["type"] in ["BOOST", "TRAP"]:
+                if item_data["type"] == "BOOST":
+                    boosts.append((locations[loc.name]["ap_id"], item_data["id"]))
+                    total_local_boosts += 1
+                elif item_data["type"] == "TRAP":
+                    traps.append((locations[loc.name]["ap_id"], item_data["id"]))
+                    total_local_traps += 1
+
+                item_data = items["Secret boots"]
+                item_id = tile_value(items["Secret boots"], {})
+            else:
+                item_id = tile_value(item_data, {})
+
             loc_data = locations[loc.name]
+
             # Save relic locations
             if item_data["type"] == "RELIC":
                 relic_id = item_id if item_id < 23 else item_id - 2
@@ -816,6 +842,15 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
             # Save enemysanity locations
             if "Enemysanity" in loc.name:
                 enemysanity_items.append(item_data["id"])
+                continue
+
+            if "Dropsanity" in loc.name:
+                dropsanity_items.append(item_data["id"])
+                continue
+
+            if "Chairsanity" in loc.name:
+                chair_id = CHAIR_LOCATIONS[loc.name]["chair_id"]
+                chairsanity_items[chair_id] = item_data["id"]
                 continue
 
             # Relic locations
@@ -883,8 +918,8 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                         for add in loc_data["addresses"]:
                             patch.write_token(APTokenTypes.WRITE, add, (0x0000).to_bytes(2, "little"))
                     else:
-                        # TODO In the future add traps and boosts
                         new_value = tile_value(item_data, {"no_offset": True})
+
                         for add in loc_data["addresses"]:
                             patch.write_token(APTokenTypes.WRITE, add, new_value.to_bytes(2, "little"))
                 elif "vanilla_item" in loc_data and loc_data["vanilla_item"] == "Holy glasses":
@@ -893,7 +928,10 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                     else:
                         for address in loc_data["addresses"]:
                             # Holy glasses is no-offset item
-                            item_id = tile_value(item_data, {"no_offset": True})
+                            if item_data["type"] == "BOOST" or item_data["type"] == "TRAP":
+                                item_id = items["Secret boots"]["id"]
+                            else:
+                                item_id = tile_value(item_data, {"no_offset": True})
                             patch.write_token(APTokenTypes.WRITE, address, item_id.to_bytes(2, "little"))
                 elif "trio" in loc_data:
                     opts = {"relic": loc_data, "item": item_data, "entry": 0x026e64, "inj": 0x038a00}
@@ -906,7 +944,6 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                         if item_data["type"] == "RELIC":
                             replace_gold_ring_with_relic(item_id, patch)
                         else:
-                            # TODO In the future add traps and boosts
                             for address in loc_data["addresses"]:
                                 patch.write_token(APTokenTypes.WRITE, address, item_id.to_bytes(2, "little"))
                     else:
@@ -937,6 +974,16 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
             if "Enemysanity" in loc.name:
                 enemysanity_items.append(0xfff)
                 continue
+
+            if "Dropsanity" in loc.name:
+                dropsanity_items.append(0xfff)
+                continue
+
+            if "Chairsanity" in loc.name:
+                chair_id = CHAIR_LOCATIONS[loc.name]["chair_id"]
+                chairsanity_items[chair_id] = 0xfff
+                continue
+
             loc_data = locations[loc.name]
             item_data = items["Secret boots"]
             item_id = tile_value(item_data, {})
@@ -1015,7 +1062,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     # Jewel of open price at 0x47a3098 01f4/500 change to 10
     patch.write_token(APTokenTypes.WRITE, 0x47a3098, (10).to_bytes(2, "little"))
     # Write relic location in time-attack menu TOTAL RELICS 28
-    # Defeat Minoutaur and Werewolf 30/30 bytes 20 relics(20) @RAM 0x0dfcdc
+    # Defeat Minotaur and Werewolf 30/30 bytes 20 relics(20) @RAM 0x0dfcdc
     start_address = 0x438d66c
     offset = 0x4298798
     for i in range(0, 20, 2):
@@ -1135,10 +1182,11 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                 patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", relic_byte))
                 patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", relic_byte))
                 start_address += 1
-        # Terminate
-        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
-        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
-        # Richter Defeat Dracula   23 bytes left
+        # Terminate at Jewel Item
+        # CHAIRSANITY address before terminate: 0x438d6cb
+        #patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        #patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Richter Defeat Dracula   23 bytes left Using for Chairsanity
 
     # WRITE DOPP 10 ITEM on the very end of Defeat Olrox and terminate
     if dopp10_item == 0xffff:
@@ -1287,6 +1335,156 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
                 start_address += 1
         # Don't need to terminate. 23 bytes remaining
 
+    # Time-attack is filled until Defeat Ralph, Grant and Sypha
+    # Relics start at Defeat Minotaur
+    # Relics start at Defeat Minotaur
+    # Dropsanity can start at Defeat Karasuman total 108 locations
+    if len(dropsanity_items):
+        # Defeat Karasuman. 18 Bytes 12 items (12) @RAM 0x438d5f0
+        start_address = 0x438d5f0
+        offset = 0x4298798
+        for i in range(0, 12, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Karasuman 0 FREE SPACE
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Defeat Succubus. 18 bytes 12 items (24)
+        start_address = 0x438d604
+        for i in range(12, 24, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Succubus 0 FREE SPACE
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Defeat Beelzebub. 18 bytes 12 items (36) @RAM 0x438d618 f4e80
+        for i in range(24, 36, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Beelzebub 0 FREE SPACE
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Defeat Hippogryph. 18 bytes 12 items (48) @RAM 0x438d62c
+        start_address = 0x438d62c
+        for i in range(36, 48, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Hippogryph FREE SPACE 0 bytes
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Defeat Slogra and Gaibon. 26(24) bytes 16 items(64) @RAM 0x438D640.
+        start_address = 0x438d640
+        for i in range(48, 64, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Slogra and Gaibon 2 bytes left
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # Defeat Scylla. 14(12) bytes 8 item(72) @RAM 0x438d65c
+        start_address = 0x438d65c
+        for i in range(64, 72, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate Defeat Scylla FREE SPACE 2 bytes
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+        # ----------- On time attack 33 bytes 22 item(94) @RAM 0x438d739 @GAME 0xdfda9
+        start_address = 0x438d739
+        for i in range(72, 94, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Don't need to be terminated
+        # Time attack + windows color text 21 bytes 14 item(94) @ RAM 0x438d77a @GAME 0xdfdea Probably have more space
+        start_address = 0x438d77a
+        for i in range(94, 108, 2):
+            transformed = items_as_bytes(dropsanity_items[i], dropsanity_items[i + 1])
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+
+    if len(chairsanity_items):
+        # Wrote in the end of relic copy at Richter defeat Dracula 23 bytes left, remember to terminate
+        start_address = 0x438d6cb
+        offset = 0x4298798
+        for i in range(0, 10, 2):
+            chair1 = chairsanity_items[i]
+            if i == len(chairsanity_items) - 1:
+                chair2 = 0xeee
+            else:
+                chair2 = chairsanity_items[i + 1]
+            transformed = items_as_bytes(chair1, chair2)
+            for item_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", item_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", item_byte))
+                start_address += 1
+        # Terminate
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+
+    # BOOSTS and TRAPS
+    # Start/End @RAM 0x438d791/0x438d7b1 @GAME 0xdfe01/0xdfe21 33 bytes
+    # Start/End @RAM 0x438d7b3/0x438d805 @GAME 0xdfe23/0xdfe75 83 bytes
+    # Start/End @RAM 0x438d808/0x438d861 @GAME 0xdfe78/0xdfed1 90 bytes
+    if len(boosts):
+        boost_qty = 0
+        start_address = 0x438d791
+        for loc, boost in boosts:
+            transformed = trap_as_bytes(boost, loc)
+            for boost_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", boost_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", boost_byte))
+                start_address += 1
+                boost_qty += 1
+                if boost_qty == 16:
+                    patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+                    patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+                    start_address = 0x438d7b3
+                    # 16 boosts so far still 34 left or 68 bytes
+    patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+    patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+    # Boost end @RAM 0x438d7f6 @GAME 0xdfe66
+    # Trap start @RAM 0x438d7f9 @GAME 0xdfe69
+    if len(traps):
+        trap_qty = 0
+        start_address = 0x438d7f9
+        for loc, trap in traps:
+            transformed = trap_as_bytes(trap, loc)
+            for trap_byte in transformed:
+                patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", trap_byte))
+                patch.write_token(APTokenTypes.WRITE, start_address - offset, struct.pack("<B", trap_byte))
+                start_address += 1
+                trap_qty += 1
+                if trap_qty == 12:
+                    # Do not need to terminate
+                    start_address = 0x438d808
+                    # 6 traps so far still 44 left of 88 bytes
+        patch.write_token(APTokenTypes.WRITE, start_address, (0xff00).to_bytes(2))
+        patch.write_token(APTokenTypes.WRITE, start_address - offset, (0xff00).to_bytes(2))
+
     # Randomize items
     non_locations = {}
     offset_locations = {}
@@ -1294,18 +1492,29 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     filled_locations = [loc.name for loc in world.multiworld.get_filled_locations(world.player)]
 
     for k, v in locations.items():
-        if "Enemysanity" in k:
+        if "Enemysanity" or "Dropsanity" in k:
             continue
         if k not in filled_locations and randomize_items:
             if "no_offset" in v or v["ap_id"] == 40:
                 offset_locations[k] = v
             else:
                 non_locations[k] = v
-            vanilla_list.append(v["vanilla_item"])
+
+            try:
+                vanilla_list.append(v["vanilla_item"])
+            except KeyError:
+                # No vanilla drop
+                vanilla_list.append("EXTRA")
 
     if world.options.powerful_items.value:
         while len(vanilla_list) and len(world.extra_add):
-            vanilla_list.pop(world.random.randrange(len(vanilla_list)))
+            # Can we remove an EXTRA
+            if "EXTRA" in vanilla_list:
+                pos = vanilla_list.index("EXTRA")
+                vanilla_list.pop(pos)
+            else:
+                vanilla_list.pop(world.random.randrange(len(vanilla_list)))
+
             vanilla_list.append(world.extra_add.pop(world.random.randrange(len(world.extra_add))))
 
     # Place no_offset locations first
@@ -1313,7 +1522,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         placed = False
         while not placed:
             item = world.random.choice(vanilla_list)
-            if item not in ["Life Vessel", "Heart Vessel"]:
+            if item not in ["Life Vessel", "Heart Vessel", "EXTRA"]:
                 loc = offset_locations.popitem()
                 new_value = tile_value(items[item], {"no_offset": True})
                 # Abandoned Mine Demon Side - Item on Breakable Wall is not no_offset
@@ -1327,12 +1536,21 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     # Place non-randomized items
     while len(non_locations):
         loc = non_locations.popitem()
-        item = vanilla_list.pop(world.random.randrange(len(vanilla_list)))
+
+        try:
+            print(f"{item} / {loc}")
+        except UnboundLocalError:
+            print(f"Something went wrong at {non_locations}")
+            print(f"{loc}")
+        while item == "EXTRA":
+            item = vanilla_list.pop(world.random.randrange(len(vanilla_list)))
         item_id = tile_value(items[item], {})
         if "boss" in loc[1]:
             patch.write_token(APTokenTypes.WRITE, loc[1]["bin_address"], item_id.to_bytes(2, "little"))
         else:
             write_tile_id(loc[1]["zones"], loc[1]["index"], item_id, patch)
+
+    # Placing items ended. Do we still have EXTRA? Not sure if I miss something
 
     """
     The flag that get set on NO4 switch: 0x03be1c and the instruction is jz, r2, 80181230 on 0x5430404 we patched
@@ -1366,6 +1584,12 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
         sanity |= (1 << 0)
     if options_dict["enemy_scroll"]:
         sanity |= (1 << 1)
+    if options_dict["dropsanity"]:
+        sanity |= (1 << 2)
+    if options_dict["chairsanity"]:
+        sanity |= (1 << 3)
+    if options_dict["trap_qty"]:
+        sanity |= (1 << 4)
     if options_dict["auto_heal"]:
         sanity |= (1 << 6)
     if options_dict["death_link"]:
@@ -1407,8 +1631,7 @@ def write_tokens(world: "SotnWorld", patch: SotnProcedurePatch):
     player_num = world.player
 
     seed_num = options_dict["seed"]
-
-    write_seed(patch, seed_num, player_num, player_name, sanity)
+    write_seed(patch, seed_num, player_num, player_name, sanity, total_local_boosts, total_local_traps)
 
     if options_dict["infinite_wing_smash"]:
         # Wing smash timer
@@ -3478,14 +3701,17 @@ def get_base_rom_bytes(audio: bool = False) -> bytes:
     return base_rom_bytes
 
 
-def write_seed(patch: SotnProcedurePatch, seed, player_number, player_name, sanity_options) -> None:
+def write_seed(patch: SotnProcedurePatch, seed, player_number, player_name, sanity_options,
+               boosts_qty, traps_qty) -> None:
     byte = 0
     start_address = 0x0438d47c
     duplicate_offset = 0x4298798
     seed_text = []
 
     # Seed number occupies 10 bytes total line have 22 + 0xFF 0x00 at end
-    # There are 2 unused bytes from bonus luck
+    # Boosts Quantity at 0x438d490 @GAME 0xdfb00
+    # Traps Quantity at 0x438d491 @GAME 0xdfb01
+
     for i, num in enumerate(seed):
         if i % 2 != 0:
             byte = (byte | int(num))
@@ -3517,6 +3743,12 @@ def write_seed(patch: SotnProcedurePatch, seed, player_number, player_name, sani
         patch.write_token(APTokenTypes.WRITE, start_address, struct.pack("<B", b))
         patch.write_token(APTokenTypes.WRITE, start_address - duplicate_offset, struct.pack("<B", b))
         start_address += 1
+
+    # Boosts and traps
+    patch.write_token(APTokenTypes.WRITE, 0x438d490, struct.pack("<B", boosts_qty))
+    patch.write_token(APTokenTypes.WRITE, 0x0f4cf8, struct.pack("<B", boosts_qty))
+    patch.write_token(APTokenTypes.WRITE, 0x438d491, struct.pack("<B", traps_qty))
+    patch.write_token(APTokenTypes.WRITE, 0x0f4cf9, struct.pack("<B", traps_qty))
 
     utf_name = player_name.encode("utf8")
     sizes = [30, 30, 20]
@@ -3591,11 +3823,26 @@ def items_as_bytes(item1: int, item2: int) -> tuple:
     return value1, value2, value3
 
 
+def trap_as_bytes(trap: int, loc: int) -> tuple:
+    trap_value = trap - 330
+    value1 = (trap_value << 2) | ((loc & 0x300) >> 8)
+    value2 = loc & 0xff
+
+    return value1, value2
+
+
 def bytes_as_items(byte1: int, byte2: int, byte3: int) -> tuple:
     item1 = (byte1 << 4) | ((byte2 & 0xf0) >> 4)
     item2 = ((byte2 & 0x0f) << 8) | byte3
 
     return item1, item2
+
+
+def bytes_as_trap(byte1: int, byte2: int) -> tuple:
+    trap = (byte1 >> 2) + 330
+    loc = (byte1 & 0x3) << 8 | byte2
+
+    return trap, loc
 
 
 def randomize_starting_equipment(world: "SotnWorld", patch: SotnProcedurePatch):
