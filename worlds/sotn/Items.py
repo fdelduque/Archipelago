@@ -1983,6 +1983,237 @@ items = {
             "address": 0x097981,
             "classification": ItemClassification.progression
         },
+    "Experience boost 1k":
+        {
+            "id": 330,
+            "type": "BOOST",
+            "address": 0x097bec,
+            "classification": ItemClassification.useful
+        },
+    "Experience boost 5k":
+        {
+            "id": 331,
+            "type": "BOOST",
+            "address": 0x097bec,
+            "classification": ItemClassification.useful
+        },
+    "Experience boost 10k":
+        {
+            "id": 332,
+            "type": "BOOST",
+            "address": 0x097bec,
+            "classification": ItemClassification.useful
+        },
+    "Max hp boost 10":
+        {
+            "id": 333,
+            "type": "BOOST",
+            "address": 0x097ba4,
+            "classification": ItemClassification.useful
+        },
+    "Max hp boost 50":
+        {
+            "id": 334,
+            "type": "BOOST",
+            "address": 0x097ba4,
+            "classification": ItemClassification.useful
+        },
+    "Max heart boost 10":
+        {
+            "id": 335,
+            "type": "BOOST",
+            "address": 0x097bac,
+            "classification": ItemClassification.useful
+        },
+    "Max heart boost 50":
+        {
+            "id": 336,
+            "type": "BOOST",
+            "address": 0x097bac,
+            "classification": ItemClassification.useful
+        },
+    "Max MP boost 10":
+        {
+            "id": 337,
+            "type": "BOOST",
+            "address": 0x097bb4,
+            "classification": ItemClassification.useful
+        },
+    "Max MP boost 50":
+        {
+            "id": 338,
+            "type": "BOOST",
+            "address": 0x097bb4,
+            "classification": ItemClassification.useful
+        },
+    "HP restore":
+        {
+            "id": 339,
+            "type": "BOOST",
+            "address": 0x97ba0,
+            "classification": ItemClassification.useful
+        },
+    "Heart restore":
+        {
+            "id": 340,
+            "type": "BOOST",
+            "address": 0x097ba8,
+            "classification": ItemClassification.useful
+        },
+    "MP restore":
+        {
+            "id": 341,
+            "type": "BOOST",
+            "address": 0x097bb0,
+            "classification": ItemClassification.useful
+        },
+    "Half max HP":
+        {
+            "id": 350,
+            "type": "TRAP",
+            "address": 0x097ba4,
+            "classification": ItemClassification.trap
+        },
+    "80% max HP":
+        {
+            "id": 351,
+            "type": "TRAP",
+            "address": 0x097ba4,
+            "classification": ItemClassification.trap
+        },
+    "Half max heart":
+        {
+            "id": 352,
+            "type": "TRAP",
+            "address": 0x097bac,
+            "classification": ItemClassification.trap
+        },
+    "80% max heart":
+        {
+            "id": 353,
+            "type": "TRAP",
+            "address": 0x097bac,
+            "classification": ItemClassification.trap
+        },
+    "Half max MP":
+        {
+            "id": 354,
+            "type": "TRAP",
+            "address": 0x097bb4,
+            "classification": ItemClassification.trap
+        },
+    "80% max MP":
+        {
+            "id": 355,
+            "type": "TRAP",
+            "address": 0x097bb4,
+            "classification": ItemClassification.trap
+        },
+    "10 HP subtract":
+        {
+            "id": 356,
+            "type": "TRAP",
+            "address": 0x097ba0,
+            "classification": ItemClassification.trap
+        },
+    "50 HP subtract":
+        {
+            "id": 357,
+            "type": "TRAP",
+            "address": 0x097ba0,
+            "classification": ItemClassification.trap
+        },
+    "10 heart subtract":
+        {
+            "id": 358,
+            "type": "TRAP",
+            "address": 0x097ba8,
+            "classification": ItemClassification.trap
+        },
+    "50 heart subtract":
+        {
+            "id": 359,
+            "type": "TRAP",
+            "address": 0x097ba8,
+            "classification": ItemClassification.trap
+        },
+    "Turn into stone":
+        {
+            "id": 360,
+            "type": "TRAP",
+            "address": 0x073404,
+            "classification": ItemClassification.trap
+        },
+    "Teleport to zone entrance":
+        {
+            "id": 361,
+            "type": "TRAP",
+            "address": 0x03c9a4,
+            "classification": ItemClassification.trap
+        },
+    "Close random teleport":
+        {
+            "id": 362,
+            "type": "TRAP",
+            "address": 0x03c9a4,
+            "classification": ItemClassification.trap
+        },
+    "1 hit KO 30":
+        {
+            "id": 364,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "1 hit KO 60":
+        {
+            "id": 365,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Fall damage 5":
+        {
+            "id": 366,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Fall damage 10":
+        {
+            "id": 367,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Ice floor 5":
+        {
+            "id": 368,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Ice floor 10":
+        {
+            "id": 369,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Axe Lord 1":
+        {
+            "id": 370,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
+    "Axe Lord 2":
+        {
+            "id": 371,
+            "type": "TRAP",
+            "address": 0x000000,
+            "classification": ItemClassification.trap
+        },
     "Victory":
         {
             "id": 400,
@@ -2031,3 +2262,5 @@ armor = {k: v for k, v in items.items() if v["type"] == "ARMOR"}
 helmet = {k: v for k, v in items.items() if v["type"] == "HELMET"}
 cloak = {k: v for k, v in items.items() if v["type"] == "CLOAK"}
 accessory = {k: v for k, v in items.items() if v["type"] == "ACCESSORY"}
+boosts = {k: v for k, v in items.items() if v["type"] == "BOOST"}
+traps = {k: v for k, v in items.items() if v["type"] == "TRAP"}
