@@ -6,12 +6,13 @@ from worlds.AutoWorld import WebWorld, World
 from BaseClasses import Tutorial, MultiWorld, ItemClassification, Item
 from Options import AssembleOptions
 
-from .Items import SotnItem, items, relic_table, item_id_to_name
+from .Items import SotnItem, items, relic_table, item_id_to_name, boosts, traps
 from .Locations import locations, SotnLocation
 from .Regions import create_regions, create_regions_no_logic
 from .Rules import set_rules, set_no_logic_rules
 from .Options import SOTNOptions, sotn_option_groups
 from .Rom import SotnProcedurePatch, write_tokens
+from .Traps import TOTAL_BOOSTS, TOTAL_TRAPS
 from .client import SotNClient
 #from .test_client import SotNTestClient
 
@@ -121,7 +122,7 @@ class SotnWorld(World):
         for loc in active_locations:
             if loc.name == "Reverse Center Cube - Kill Dracula":
                 continue
-            if "Enemysanity" in loc.name:
+            if any(sanity in loc.name for sanity in ["Enemysanity", "Dropsanity", "Chairsanity"]):
                 continue
 
             vanilla_item = locations[loc.name]["vanilla_item"]
@@ -135,9 +136,52 @@ class SotnWorld(World):
                 vanilla_list.pop(self.random.randrange(len(vanilla_list)))
                 vanilla_list.append(self.extra_add.pop(self.random.randrange(len(self.extra_add))))
 
-        for item in vanilla_list:
-            itempool += [self.create_item(item)]
-            added_items += 1
+        # Boosts and Traps
+        boost_qty = int(self.options.boost_qty)
+        boostpool: typing.List[SotnItem] = []
+        trap_qty = int(self.options.trap_qty)
+        trappool: typing.List[SotnItem] = []
+
+        if boost_qty > 0:
+            boost_weight = self.options.boost_weight
+            boost_weight_list = []
+
+            boost_list = boost_weight.current_key.split(';')
+
+            for i, b in enumerate(boost_list):
+                if i < TOTAL_BOOSTS:
+                    if b == '*':
+                        boost_weight_list.append(self.random.randint(0, 10))
+                    else:
+                        boost_weight_list.append(int(b))
+
+            while len(boost_weight_list) < TOTAL_BOOSTS:
+                boost_weight_list.append(0)
+
+            boost_list = [name for name in boosts.keys()]
+            random_boosts = self.random.choices(boost_list, weights=boost_weight_list, k=boost_qty)
+            for b in random_boosts:
+                boostpool += [self.create_item(b)]
+
+        if trap_qty > 0:
+            trap_weight = self.options.trap_weight
+            trap_weight_list = []
+
+            trap_list = trap_weight.current_key.split(';')
+            for i, t in enumerate(trap_list):
+                if i < TOTAL_TRAPS:
+                    if t == '*':
+                        trap_weight_list.append(self.random.randint(0, 10))
+                    else:
+                        trap_weight_list.append(int(t))
+
+            while len(trap_weight_list) < TOTAL_TRAPS:
+                trap_weight_list.append(0)
+
+            trap_list = [name for name in traps.keys()]
+            random_traps = self.random.choices(trap_list, weights=trap_weight_list, k=trap_qty)
+            for t in random_traps:
+                trappool += [self.create_item(t)]
 
         if self.options.enemysanity.value:
             # Enemysanity adds 141 locations.
@@ -182,7 +226,25 @@ class SotnWorld(World):
                 added_items += 1
                 added_vessel += 1
 
+        # Try to add Boosts and Traps
+        while (len(boostpool) or len(trappool)) and total_location - added_items:
+            if len(boostpool):
+                rand_number = self.random.randrange(len(boostpool))
+                boost = boostpool.pop(rand_number)
+
+                if total_location > added_items:
+                    itempool += [boost]
+                    added_items += 1
+            if len(trappool):
+                rand_number = self.random.randrange(len(trappool))
+                trap = trappool.pop(rand_number)
+
+                if total_location > added_items:
+                    itempool += [trap]
+                    added_items += 1
+
         # Still have space? Add junk items
+        # TODO Maybe could be junk or a random item
         itempool += [self.create_random_junk() for _ in range(total_location - added_items)]
 
         self.multiworld.itempool += itempool
