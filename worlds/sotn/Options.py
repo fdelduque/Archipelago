@@ -36,6 +36,74 @@ class Extension(Choice):
     default = 3
 
 
+class Goal(Choice):
+    """Seed goal"""
+    display_name = "Goal"
+    option_richter = 0
+    option_shaft = 1
+    option_rs = 2
+    option_dracula = 3
+    option_talisman = 4
+    option_td = 5
+    default = 3
+
+
+class ChairSanity(Toggle):
+    """
+    Siting in a chair become a check
+    """
+    display_name = "Chairsanity"
+
+
+class BoostQty(Range):
+    """Boosts quantity in the pool.
+    Limited to 50 boosts or available space"""
+    display_name = "Boost quantity"
+    range_start = 0
+    range_end = 50
+    default = 0
+
+
+class BoostWeight(FreeText):
+    """Weights for randomize boosts USE * for random amount
+    Experience boost -> 1 / 5 / 10,
+    Max hp boost -> 10/50,
+    Max heart boost -> 10/50,
+    Max mp boost -> 10/50,
+    Hp restore,
+    Heart restore,
+    Mp restore"""
+    display_name = "Boosts weights"
+    default = "10;6;1;6;1;6;1;6;1;7;7;7"
+
+
+class TrapQty(Range):
+    """Traps quantity in the pool.
+    Limited to 50 traps or available space"""
+    display_name = "Trap quantity"
+    range_start = 0
+    range_end = 50
+    default = 0
+
+
+class TrapWeight(FreeText):
+    """Weights for randomize traps USE * for random amount
+    max hp -> half/80%,
+    max heart -> half/80%,
+    hp subtract -> 10/50,
+    heart subtract -> 10/50,
+    Turn into stone,
+    Teleport to zone entrance,
+    Close random teleport,
+    1 hit KO -> 30 sec / 60 sec
+    Fall damage -> 5 min / 10 min,
+    Ice floor -> 5 min / 10 min,
+    Axe Lord -> 1 min / 2 min
+    """
+    display_name = "Traps weights"
+    default = "1;2;1;2;1;2;7;3;7;3;8;5;7;6;2;6;2;6;2;4;2"
+
+
 class InfiniteWing(Toggle):
     """
         Makes wing smash continue until you hit a wall or run out of MP (cancellable by exiting bat form)
@@ -73,6 +141,11 @@ class Enemysanity(Toggle):
 class EnemyScroll(Toggle):
     """Enemysanity require Faerie Scroll"""
     display_name = "Enemysanity require Spirit Orb"
+
+
+class Dropsanity(Toggle):
+    """Getting the enemy rare drop becomes a check"""
+    display_name = "Dropsanity"
 
 
 class Difficult(Choice):
@@ -326,6 +399,7 @@ class SOTNOptions(PerGameCommonOptions):
     boss_locations: BossLocations
     enemysanity: Enemysanity
     enemy_scroll: EnemyScroll
+    dropsanity: Dropsanity
     difficult: Difficult
     enemy_mod: EnemyModifier
     drop_mod: DropModifier
@@ -353,16 +427,21 @@ class SOTNOptions(PerGameCommonOptions):
     color_randomizer: ColorRandomizer
     randomize_drop: RandomizeDrop
     randomize_candles: RandomizeCandles
+    boost_qty: BoostQty
+    boost_weight: BoostWeight
+    trap_qty: TrapQty
+    trap_weight: TrapWeight
+    chairsanity: ChairSanity
 
 
 sotn_option_groups = [
     OptionGroup("Item Pool", [
-        Extension, Enemysanity, ExtraPool, BossLocations,
+        Extension, Enemysanity, Dropsanity, ChairSanity, ExtraPool, BossLocations,
     ]),
     OptionGroup("Gameplay Tweaks", [
         OpenedNO4NO3, OpenedDAIARE,  RandomizeNonLocations, EnemyScroll, Difficult, EnemyModifier, DropModifier,
         RandomizeDrop, RandomizeCandles, RandomStartGear, DeathLink, RandomShopStock, UnlockedMode, RelicSurprise,
-        EnemyStats, ShopPrices, StartingZone, ReverseLibraryCard, NoLogic
+        EnemyStats, ShopPrices, StartingZone, ReverseLibraryCard, NoLogic, BoostQty, BoostWeight, TrapQty, TrapWeight,
     ]),
     OptionGroup("QOL", [
         InfiniteWing,  RemovePrologue,  MagicVessels, AntiFreeze, MyPurse, FastWarp, SkipClockTowerPuzzle, AutoHeal
