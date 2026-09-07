@@ -12,6 +12,7 @@ def create_regions_no_logic(multiworld: MultiWorld, player: int, options: SOTNOp
     extension = options.item_pool.value
     boss_locations = options.boss_locations.value
     enemysanity = options.enemysanity.value
+    chairsanity = options.chairsanity.value
 
     regions_dict = {
         1: Region("Colosseum", player, multiworld),
@@ -255,6 +256,11 @@ def create_regions_no_logic(multiworld: MultiWorld, player: int, options: SOTNOp
                         if "enemy" in v and v["enemy"]:
                             region.locations.append(SotnLocation(player, k, v["ap_id"], region))
                             added_locations.append(k)
+                    if chairsanity:
+                        if "chair" in v and v["chair"]:
+                            print("amor")
+                            region.locations.append(SotnLocation(player, k, v["ap_id"], region))
+                            added_locations.append(k)
 
     # Add kill Dracula
     region = name_to_region["Reverse Center Cube"]
@@ -271,6 +277,7 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
     extension = options.item_pool.value
     boss_locations = options.boss_locations.value
     enemysanity = options.enemysanity.value
+    chairsanity = options.chairsanity.value
 
     regions_dict = {
         1: Region("Colosseum", player, multiworld),
@@ -500,7 +507,6 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
             elif zone == ZONE["RBO8"]:
                 # Galamoth
                 region = name_to_region["Floating Catacombs"]
-
             else:
                 region = regions_dict[zone]
 
@@ -515,6 +521,10 @@ def create_regions(multiworld: MultiWorld, player: int, options: SOTNOptions) ->
                             added_locations.append(k)
                     if enemysanity:
                         if "enemy" in v and v["enemy"]:
+                            region.locations.append(SotnLocation(player, k, v["ap_id"], region))
+                            added_locations.append(k)
+                    if chairsanity:
+                        if "chair" in v and v["chair"]:
                             region.locations.append(SotnLocation(player, k, v["ap_id"], region))
                             added_locations.append(k)
 
