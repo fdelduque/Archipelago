@@ -2,31 +2,30 @@ import random
 import asyncio
 import worlds._bizhawk as bizhawk
 from typing import TYPE_CHECKING
-from .Items import trap_table, base_item_id, item_table
+from .Items import boosts, traps
 from collections import namedtuple
 
 if TYPE_CHECKING:
     from worlds._bizhawk.context import BizHawkClientContext
 
 
-trap_id_to_name = {value.index - base_item_id: key for key, value in trap_table.items()}
-
 # Fall Damage and Ice Floor By: Forat Negre
+TOTAL_BOOSTS = 12
+TOTAL_TRAPS = 21
 
 
 class TrapData:
-    def __init__(self, trap_name: str, trap_active: bool, received_position: int, start_time: int):
+    def __init__(self, trap_name: str, start_time: int):
         self.trap_name = trap_name
-        self.trap_active = trap_active
-        self.received_position = received_position
         self.start_time = start_time
+        self.trap_active = False
         self.trap_ended = False
-        self.trap_announce = False
+        self.off_world = False
 
 
 async def apply_trap(ctx: "BizHawkClientContext", trap_name: str) -> str:
     trap_value = 0
-    trap_data = item_table[trap_name]
+    trap_data = traps[trap_name]
     return_string = ""
 
     if "Ice" in trap_name:
@@ -41,28 +40,28 @@ async def apply_trap(ctx: "BizHawkClientContext", trap_name: str) -> str:
         elif "80%" in trap_name:
             trap_value = 0.8
 
-        max_value = await read_int(ctx, trap_data.address, 4, "MainRAM")
+        max_value = await read_int(ctx, trap_data["address"], 4, "MainRAM")
         new_value = int(max_value * trap_value)
-        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address, new_value.to_bytes(4, "little"), "MainRAM")])
-        cur_value = await read_int(ctx, trap_data.address - 4, 4, "MainRAM")
+        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"], new_value.to_bytes(4, "little"), "MainRAM")])
+        cur_value = await read_int(ctx, trap_data["address"] - 4, 4, "MainRAM")
         if cur_value > new_value:
-            await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address - 4, new_value.to_bytes(4, "little"), "MainRAM")])
+            await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"] - 4, new_value.to_bytes(4, "little"), "MainRAM")])
     elif "subtract" in trap_name:
         if "10" in trap_name:
             trap_value = 10
         elif "50" in trap_name:
             trap_value = 50
 
-        cur_value = await read_int(ctx, trap_data.address, 4, "MainRAM")
+        cur_value = await read_int(ctx, trap_data["address"], 4, "MainRAM")
         new_value = cur_value - trap_value
         if new_value < 0:
             new_value = 1
-        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address, new_value.to_bytes(4, "little"), "MainRAM")])
+        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"], new_value.to_bytes(4, "little"), "MainRAM")])
     elif "stone" in trap_name:
-        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address, b'\x0b', "MainRAM")])
-        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address + 2, b'\x00', "MainRAM")])
+        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"], b'\x0b', "MainRAM")])
+        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"] + 2, b'\x00', "MainRAM")])
     elif "Teleport" in trap_name:
-        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data.address, b'\x00', "MainRAM")])
+        await bizhawk.write(ctx.bizhawk_ctx, [(trap_data["address"], b'\x00', "MainRAM")])
     elif "Close" in trap_name:
         return_string = await close_teleport(ctx)
 
@@ -157,8 +156,8 @@ async def apply_fall_damage(ctx: "BizHawkClientContext"):
 async def apply_axe_lord(ctx: "BizHawkClientContext"):
     # Prevent changing equipment during the trap
     await bizhawk.write(ctx.bizhawk_ctx, [(0x3c9a8, b'\x01', "MainRAM")])
-    await bizhawk.write(ctx.bizhawk_ctx, [(0x800fa1ae, b'\x00\x00', "System Bus")])
-    await bizhawk.write(ctx.bizhawk_ctx, [(0x800fa0d2, b'\x00\x00', "System Bus")])
+    await bizhawk.write(ctx.bizhawk_ctx, [(0x800fa1ae, b'\x00\x00', "System Bus")]) # Original: E2AC
+    await bizhawk.write(ctx.bizhawk_ctx, [(0x800fa0d2, b'\x00\x00', "System Bus")]) # Original: E2AC
     # Force open pause. Thanks for eldri7ch and bismurphy from Long Library discord for all info on that
     # Open pause to unload weapon
     await bizhawk.lock(ctx.bizhawk_ctx)
